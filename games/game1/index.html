@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zombie Shooter Pro</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="menu" class="screen active">
+  <h1>🧟 Zombie Shooter Pro</h1>
+ 
+  <button onclick="startGame()">▶ Start Game</button>
+  <h5>Powered by MN ZONEX 2.0</h5>
+</div>
+
+<div id="gameover" class="screen">
+  <h1>Game Over</h1>
+  <p id="finalScore"></p>
+  <button onclick="location.reload()">Restart</button>
+</div>
+
+<div id="hud">
+  <span id="score">Score: 0</span>
+  <button onclick="togglePause()">⏸</button>
+</div>
+
+<div id="mobileControls">
+  <div class="pad">
+    <button onclick="move('up')">⬆</button>
+    <button onclick="move('left')">⬅</button>
+    <button onclick="move('right')">➡</button>
+    <button onclick="move('down')">⬇</button>
+  </div>
+  <button class="shoot" onclick="shoot()">🔫</button>
+</div>
+
+<canvas id="game"></canvas>
+<script src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MN ZONEX 2.0 - Download Speed Test</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:"Segoe UI",system-ui,Arial,sans-serif;
+  background:radial-gradient(circle at top,#1b1f27,#0c0f14);
+  color:#fff;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+
+/* Title */
+h1{
+  font-size:50px;
+  text-align:center;
+  margin:20px 0 10px;
+}
+h1 span{
+  color:#00e5ff;
+}
+
+/* Card */
+.card{
+  width:100%;
+  max-width:480px;
+  background:linear-gradient(180deg,#151922,#10131a);
+  border-radius:22px;
+  padding:30px 26px 36px;
+  box-shadow:0 40px 80px rgba(0,0,0,.7);
+  text-align:center;
+}
+
+/* Gauge */
+.gauge-box{
+  position:relative;
+  width:280px;
+  height:280px;
+  margin:0 auto 10px;
+}
+svg{
+  transform:rotate(-90deg);
+}
+circle{
+  fill:none;
+  stroke-width:14;
+}
+.bg{
+  stroke:#222836;
+}
+.fg{
+  stroke:#00e5ff;
+  stroke-linecap:round;
+  stroke-dasharray:754;
+  stroke-dashoffset:754;
+  transition:stroke-dashoffset .4s ease;
+}
+
+/* Speed text */
+.speed{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+.speed h2{
+  margin:0;
+  font-size:44px;
+}
+.speed span{
+  font-size:16px;
+  color:#aab1bf;
+}
+
+/* Stats */
+.stats{
+  display:flex;
+  gap:12px;
+  margin:26px 0 28px;
+}
+.stat{
+  flex:1;
+  background:#161b26;
+  padding:12px 10px;
+  border-radius:14px;
+}
+.stat label{
+  font-size:12px;
+  color:#9aa0ac;
+}
+.stat div{
+  font-size:18px;
+  font-weight:600;
+  margin-top:4px;
+}
+
+/* Button */
+button{
+  padding:14px 44px;
+  border:none;
+  border-radius:30px;
+  font-size:16px;
+  font-weight:600;
+  cursor:pointer;
+  background:linear-gradient(135deg,#00e5ff,#0288d1);
+  color:#000;
+  transition:.3s;
+}
+button:hover{transform:scale(1.05)}
+button:disabled{
+  background:#333;
+  color:#777;
+  cursor:not-allowed;
+  transform:none;
+}
+
+/* Status */
+.status{
+  margin-top:16px;
+  font-size:14px;
+  color:#9aa0ac;
+}
+
+/* Responsive */
+@media(max-width:480px){
+  .gauge-box{width:230px;height:230px}
+  .speed h2{font-size:36px}
+  h1{font-size:36px}
+}
+</style>
+</head>
+
+<body>
+
+<h1>MN ZONEX <span>2.0</span></h1>
+
+<div class="card">
+  <p>Accurate & smooth download speed test</p>
+
+  <div class="gauge-box">
+    <svg width="100%" height="100%" viewBox="0 0 280 280">
+      <circle class="bg" cx="140" cy="140" r="120"/>
+      <circle class="fg" cx="140" cy="140" r="120" id="ring"/>
+    </svg>
+    <div class="speed">
+      <h2 id="speed">0.00</h2>
+      <span>Mbps</span>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><label>Download</label><div id="down">--</div></div>
+  </div>
+
+  <button id="start">Start Test</button>
+  <div class="status" id="status">Ready</div>
+</div>
+
+<script>
+const ring=document.getElementById("ring");
+const speedEl=document.getElementById("speed");
+const downEl=document.getElementById("down");
+const statusEl=document.getElementById("status");
+const btn=document.getElementById("start");
+
+const MAX=100;
+const CIRC=754;
+
+function setSpeed(v){
+  speedEl.textContent=v.toFixed(2);
+  const percent=Math.min(v,MAX)/MAX;
+  ring.style.strokeDashoffset=CIRC-(CIRC*percent);
+}
+
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+async function downloadTest(){
+  // simulate real download test
+  const size=6000000;
+  const s=performance.now();
+  try{
+    await fetch(`https://speed.cloudflare.com/__down?bytes=${size}`,{cache:"no-store"});
+  }catch{}
+  return size*8/((performance.now()-s)/1000)/1024/1024;
+}
+
+async function animateAverage(target){
+  const steps=50;
+  for(let i=1;i<=steps;i++){
+    const v=target*(i/steps);
+    setSpeed(v);
+    await sleep(80);
+  }
+}
+
+btn.onclick=async()=>{
+  btn.disabled=true;
+  statusEl.textContent="Testing download...";
+  setSpeed(0);
+  downEl.textContent="--";
+
+  try{
+    const rawDown=await downloadTest();
+    await animateAverage(rawDown);
+    downEl.textContent=rawDown.toFixed(2)+" Mbps";
+    statusEl.textContent="Test completed";
+  }catch{
+    statusEl.textContent="Test failed";
+  }
+
+  btn.disabled=false;
+};
+</script>
+
+</body>
+</html>

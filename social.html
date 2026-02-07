@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Social Media | MN ZONEX 2.0</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/layout.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/animations.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+
+  <style>
+    .hero{
+      text-align:center;
+      padding:60px 20px;
+      background: radial-gradient(circle, #1a1a1a, #000);
+      color: #fff;
+    }
+
+    .social-container{
+      max-width:800px;
+      margin:auto;
+      padding:50px 20px;
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:center;
+      gap:30px;
+    }
+
+    .social-card{
+      background:#141414;
+      width:150px;
+      height:150px;
+      border-radius:12px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      box-shadow:0 0 15px #00e5ff33;
+      transition: transform 0.3s, box-shadow 0.3s;
+      cursor:pointer;
+      color:#fff;
+      text-decoration:none;
+    }
+
+    .social-card:hover{
+      transform: translateY(-5px);
+      box-shadow:0 0 25px #00e5ff55;
+    }
+
+    .social-card img{
+      width:50px;
+      margin-bottom:10px;
+    }
+
+    .social-card span{
+      font-size:14px;
+      color:#00e5ff;
+    }
+  </style>
+</head>
+<body>
+
+<header class="navbar">
+  <h1>MN ZONEX <span>2.0</span></h1>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="games.html">Games</a>
+    <a href="services.html">Services</a>
+    <a href="feedback.html">Feedback</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <h2>Connect with Us</h2>
+  <p>Follow MN ZONEX on all your favorite social platforms!</p>
+</section>
+
+<section class="social-container" id="social-container">
+  <!-- Social cards will be inserted dynamically -->
+</section>
+
+<footer style="text-align:center;padding:20px;">© 2026 MN ZONEX. All rights reserved.</footer>
+
+<script>
+  // Sample social media links
+  const socials = [
+    {name:"Facebook", icon:"assets/icons/neon/facebook.png", link:"https://facebook.com"},
+    {name:"Twitter", icon:"assets/icons/neon/twitter.png", link:"https://twitter.com"},
+    {name:"Instagram", icon:"assets/icons/neon/instagram.png", link:"https://instagram.com"},
+    {name:"LinkedIn", icon:"assets/icons/neon/linkedin.png", link:"https://linkedin.com"},
+    {name:"YouTube", icon:"assets/icons/neon/youtube.png", link:"https://youtube.com"},
+    {name:"Telegram", icon:"assets/icons/neon/telegram.png", link:"https://t.me"},
+    {name:"WhatsApp", icon:"assets/icons/neon/whatsapp.png", link:"https://wa.me"},
+  ];
+
+  const container = document.getElementById("social-container");
+
+  socials.forEach(social=>{
+    const a = document.createElement("a");
+    a.className="social-card";
+    a.href = social.link;
+    a.target="_blank";
+    a.innerHTML = `<img src="${social.icon}" alt="${social.name}"><span>${social.name}</span>`;
+    container.appendChild(a);
+  });
+</script>
+
+</body>
+</html>

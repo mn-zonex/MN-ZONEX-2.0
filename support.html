@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Support | MN ZONEX 2.0</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/layout.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/animations.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+
+  <style>
+    .hero {
+      text-align:center;
+      padding:80px 20px;
+      background: radial-gradient(circle, #1a1a1a, #000);
+      color: #fff;
+    }
+    .support-container {
+      max-width:900px;
+      margin:auto;
+      padding:50px 20px;
+      background:#141414;
+      border-radius:12px;
+      box-shadow:0 0 20px #00e5ff33;
+    }
+    .faq {
+      margin-bottom:20px;
+      border-bottom:1px solid #222;
+      padding-bottom:15px;
+    }
+    .faq h3 {
+      cursor:pointer;
+      color:#00e5ff;
+      transition:0.3s;
+    }
+    .faq h3:hover{
+      color:#00ffff;
+    }
+    .faq p {
+      margin-top:10px;
+      color:#ccc;
+      display:none;
+    }
+  </style>
+</head>
+<body>
+
+<header class="navbar">
+  <h1>MN ZONEX <span>2.0</span></h1>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="games.html">Games</a>
+    <a href="services.html">Services</a>
+    <a href="feedback.html">Feedback</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <h2>Need Help?</h2>
+  <p>Check our FAQ below or reach out to our support team.</p>
+</section>
+
+<section class="support-container">
+  <div class="faq">
+    <h3>How do I play games on MN ZONEX?</h3>
+    <p>Go to the Games page, click on any game card, and it will open the game instantly in your browser.</p>
+  </div>
+  <div class="faq">
+    <h3>How can I submit feedback?</h3>
+    <p>Visit the Feedback page or Add Feedback page, fill out your name and message, then click Submit. Your feedback will appear immediately.</p>
+  </div>
+  <div class="faq">
+    <h3>Can I access MN ZONEX on mobile?</h3>
+    <p>Yes! The website is fully responsive and works smoothly on phones, tablets, and desktops.</p>
+  </div>
+  <div class="faq">
+    <h3>How do I contact support?</h3>
+    <p>Use the social links on the Social page or reach us via email. Our team will respond promptly.</p>
+  </div>
+</section>
+
+<footer style="text-align:center;padding:20px;">© 2026 MN ZONEX. All rights reserved.</footer>
+
+<script>
+  // Simple FAQ toggle
+  const faqs = document.querySelectorAll(".faq h3");
+  faqs.forEach(faq=>{
+    faq.addEventListener("click", ()=>{
+      const p = faq.nextElementSibling;
+      if(p.style.display === "block"){
+        p.style.display = "none";
+      }else{
+        p.style.display = "block";
+      }
+    });
+  });
+</script>
+
+</body>
+</html>

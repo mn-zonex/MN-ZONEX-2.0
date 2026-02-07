@@ -1,0 +1,13 @@
+.hero {
+  text-align: center;
+  padding: 80px 20px;
+  background: radial-gradient(circle, #1a1a1a, #000);
+}
+
+.cards {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 25px;
+  padding: 60px 20px;
+}

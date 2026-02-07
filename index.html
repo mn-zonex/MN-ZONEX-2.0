@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MN ZONEX 2.0</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/layout.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/animations.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+
+  <style>
+    /* Hero section */
+    .hero{
+      text-align:center;
+      padding:80px 20px;
+      background: radial-gradient(circle, #1a1a1a, #000);
+      color: #fff;
+      transition: all 1s ease;
+    }
+
+    .hero h2{
+      font-size:42px;
+      margin-bottom:10px;
+    }
+
+    .hero p{
+      font-size:18px;
+      color:#ccc;
+    }
+
+    .hero button{
+      margin-top:20px;
+      padding:12px 30px;
+      background:#00e5ff;
+      border:none;
+      border-radius:30px;
+      cursor:pointer;
+      font-weight:bold;
+      transition:0.3s;
+    }
+
+    .hero button:hover{
+      box-shadow:0 0 20px #00e5ff;
+    }
+
+    /* Cards section */
+    .cards{
+      display:flex;
+      justify-content:center;
+      gap:20px;
+      padding:50px;
+      flex-wrap:wrap;
+    }
+
+    .card{
+      background:#151515;
+      padding:30px;
+      width:180px;
+      text-align:center;
+      border-radius:12px;
+      transition: transform 0.3s, box-shadow 0.3s;
+      cursor:pointer;
+    }
+
+    .card:hover{
+      transform: translateY(-10px);
+      box-shadow:0 0 25px #00e5ff55;
+    }
+
+    /* Feedback section */
+    .feedback{
+      padding:50px;
+      max-width:800px;
+      margin:auto;
+    }
+
+    .feedback-card{
+      background:#141414;
+      padding:20px;
+      margin-top:15px;
+      border-left:4px solid #00e5ff;
+      border-radius:8px;
+    }
+
+    .feedback-card h4{
+      color:#00e5ff;
+    }
+
+    footer{
+      text-align:center;
+      padding:20px;
+      background:#111;
+      color:#777;
+    }
+  </style>
+</head>
+<body>
+
+<header class="navbar">
+  <h1>MN ZONEX <span>2.0</span></h1>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="games.html">Games</a>
+    <a href="services.html">Services</a>
+    <a href="business.html">Business</a>
+    <a href="social.html">Social</a>
+    <a href="feedback.html">Feedback</a>
+    <a href="tools.html">Tools</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <h2>MN ZONEX 2.0</h2>
+  <p>Next Level Digital Zone - Games, Services, Business, Community</p>
+  <button onclick="window.location.href='services.html'">Explore Now</button>
+</section>
+
+<section class="cards">
+  <div class="card" onclick="window.location.href='games.html'">🎮 Games</div>
+  <div class="card" onclick="window.location.href='services.html'">⚡ Services</div>
+  <div class="card" onclick="window.location.href='business.html'">🏢 Business</div>
+  <div class="card" onclick="window.location.href='social.html'">🌐 Social</div>
+  <div class="card" onclick="window.location.href='tools.html'">🛠 Useful Tools</div>
+</section>
+
+<section class="feedback">
+  <h3>User Feedback</h3>
+
+  <div class="feedback-card">
+    <h4>Alex</h4>
+    <p>Very clean and professional website.</p>
+    <span>★★★★★</span>
+  </div>
+
+  <div class="feedback-card">
+    <h4>Ravi</h4>
+    <p>Animations are smooth. Love the dark theme.</p>
+    <span>★★★★★</span>
+  </div>
+</section>
+
+<footer>
+  © 2026 MN ZONEX. All rights reserved.
+</footer>
+
+
+<!-- JS -->
+<script src="assets/js/mini-effects.js"></script>
+<script src="config/theme.js"></script>
+<script src="assets/js/main.js"></script>
+
+</body>
+</html>

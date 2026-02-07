@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Add Feedback | MN ZONEX 2.0</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="assets/css/base.css">
+  <link rel="stylesheet" href="assets/css/layout.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/animations.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+
+  <style>
+    .hero{
+      text-align:center;
+      padding:60px 20px;
+      background: radial-gradient(circle, #1a1a1a, #000);
+      color: #fff;
+    }
+    .feedback-form{
+      max-width:500px;
+      margin: auto;
+      background:#141414;
+      padding:30px;
+      border-radius:12px;
+      box-shadow:0 0 20px #00e5ff33;
+    }
+    .feedback-form h3{
+      text-align:center;
+      margin-bottom:20px;
+    }
+    .feedback-form input, .feedback-form textarea{
+      width:100%;
+      padding:12px;
+      margin-bottom:15px;
+      border-radius:8px;
+      border:none;
+      background:#1a1a1a;
+      color:#fff;
+    }
+    .feedback-form input::placeholder,
+    .feedback-form textarea::placeholder{
+      color:#bbb;
+    }
+    .feedback-form button{
+      width:100%;
+      padding:12px;
+      border:none;
+      border-radius:8px;
+      background:#00e5ff;
+      color:#000;
+      font-weight:bold;
+      cursor:pointer;
+      transition:0.3s;
+    }
+    .feedback-form button:hover{
+      box-shadow:0 0 15px #00e5ff;
+    }
+  </style>
+</head>
+<body>
+
+<header class="navbar">
+  <h1>MN ZONEX <span>2.0</span></h1>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="games.html">Games</a>
+    <a href="services.html">Services</a>
+    <a href="feedback.html">Feedback</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <h2>Share Your Feedback</h2>
+  <p>Help us improve by submitting your thoughts!</p>
+</section>
+
+<section class="feedback-form">
+  <h3>Add Your Feedback</h3>
+  <input type="text" id="user-name" placeholder="Your Name">
+  <textarea id="user-feedback" placeholder="Your Feedback"></textarea>
+  <button id="submit-feedback">Submit Feedback</button>
+</section>
+
+<footer style="text-align:center;padding:20px;">© 2026 MN ZONEX. All rights reserved.</footer>
+
+<script>
+  // Feedback array for demonstration (replace with JSON or backend later)
+  let feedbacks = [];
+
+  document.getElementById("submit-feedback").addEventListener("click", ()=>{
+    const name = document.getElementById("user-name").value.trim();
+    const msg = document.getElementById("user-feedback").value.trim();
+
+    if(!name || !msg){
+      alert("Please enter both your name and feedback!");
+      return;
+    }
+
+    // Add new feedback
+    feedbacks.push({name, msg});
+    alert("Thank you for your feedback!");
+
+    // Reset form
+    document.getElementById("user-name").value="";
+    document.getElementById("user-feedback").value="";
+
+    console.log("Feedback list:", feedbacks); // For dev preview
+  });
+</script>
+
+</body>
+</html>

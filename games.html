@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Games | MN ZONEX 2.0</title>
+
+<!-- CSS -->
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/layout.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/animations.css">
+<link rel="stylesheet" href="assets/css/responsive.css">
+
+<style>
+/* HERO */
+.hero{
+  text-align:center;
+  padding:60px 20px;
+  background:radial-gradient(circle,#1a1a1a,#000);
+  color:#fff;
+}
+.hero h2{ font-size:36px; }
+
+/* GAMES GRID */
+.games-container{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:25px;
+  padding:50px 20px;
+  max-width:1200px;
+  margin:auto;
+}
+
+/* GAME CARD */
+.game-card{
+  background:#141414;
+  border-radius:14px;
+  overflow:hidden;
+  text-align:center;
+  box-shadow:0 0 15px #00e5ff22;
+  transition:0.3s;
+}
+.game-card:hover{
+  transform:translateY(-6px);
+  box-shadow:0 0 30px #00e5ff55;
+}
+
+/* IMAGE */
+.game-card img{
+  width:100%;
+  height:140px;
+  object-fit:cover;
+  display:block;
+}
+
+/* CONTENT */
+.game-info{
+  padding:15px;
+}
+.game-info h4{
+  margin:5px 0;
+  color:#00e5ff;
+  font-size:18px;
+}
+.game-info p{
+  font-size:13px;
+  color:#bbb;
+  min-height:36px;
+}
+
+/* PLAY BUTTON */
+.play-btn{
+  display:inline-block;
+  margin-top:12px;
+  padding:10px 26px;
+  background:#00e5ff;
+  color:#000;
+  font-weight:bold;
+  border-radius:30px;
+  text-decoration:none;
+  transition:0.3s;
+}
+.play-btn:hover{
+  box-shadow:0 0 20px #00e5ff;
+  transform:scale(1.05);
+}
+
+/* FOOTER */
+footer{
+  text-align:center;
+  padding:20px;
+  color:#777;
+}
+</style>
+</head>
+
+<body>
+
+<header class="navbar">
+  <h1>MN ZONEX <span>2.0</span></h1>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="games.html">Games</a>
+    <a href="services.html">Services</a>
+    <a href="feedback.html">Feedback</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <h2> Games Hub</h2>
+  <p>Play amazing games instantly</p>
+</section>
+
+<section class="games-container" id="games"></section>
+
+<footer>© 2026 MN ZONEX. All rights reserved.</footer>
+
+<script>
+const games = [
+  {
+    name:"Space Adventure",
+    desc:"Explore the galaxy and defeat enemies",
+    img:"assets/images/games/game1.jpg",
+    link:"games/game1/index.html"
+  },
+  {
+    name:"Maze Runner",
+    desc:"Find your way through tricky mazes",
+    img:"assets/images/games/game2.jpg",
+    link:"games/game2/index.html"
+  },
+  {
+    name:"Puzzle Master",
+    desc:"Challenge your brain with puzzles",
+    img:"assets/images/games/game3.jpg",
+    link:"games/game3/index.html"
+  },
+  {
+    name:"Zombie Attack",
+    desc:"Survive endless zombie waves",
+    img:"assets/images/games/game4.jpg",
+    link:"games/game4/index.html"
+  },
+  {
+    name:"Car Racing",
+    desc:"High speed racing experience",
+    img:"assets/images/games/game5.jpg",
+    link:"games/game5/index.html"
+  },
+  {
+    name:"Battle Arena",
+    desc:"Fight opponents in the arena",
+    img:"assets/images/games/game6.jpg",
+    link:"games/game6/index.html"
+  }
+];
+
+const container = document.getElementById("games");
+
+games.forEach(g=>{
+  container.innerHTML += `
+    <div class="game-card">
+      <img src="${g.img}" alt="${g.name}">
+      <div class="game-info">
+        <h4>${g.name}</h4>
+        <p>${g.desc}</p>
+        <a href="${g.link}" class="play-btn">Play Game</a>
+      </div>
+    </div>
+  `;
+});
+</script>
+
+</body>
+</html>

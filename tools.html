@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tools | MN ZONEX 2.0</title>
+
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #0b0b0b;
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+/* Navbar */
+.navbar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 25px;
+  background: #111;
+  border-bottom: 1px solid #222;
+}
+.navbar h1 {
+  font-size: 64px;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+  text-align: center;
+  color: #fff;
+}
+.navbar h1 span { color: #00e5ff; }
+.navbar nav {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 25px;
+}
+.navbar nav a {
+  color: #bbb;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 22px; 
+  transition: 0.3s;
+}
+.navbar nav a:hover { color: #00e5ff; }
+
+/* Hero */
+.hero {
+  text-align: center;
+  padding: 70px 20px;
+}
+.hero h2 { color: #00e5ff; font-size: 46px; margin-bottom:15px; }
+.hero p { color: #ccc; font-size:20px; }
+
+/* Tools Grid */
+.tools-container{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:28px;
+  padding:50px 20px;
+  max-width:1200px;
+  margin:auto;
+}
+
+/* Tool Card */
+.tool-card{
+  background:#141414;
+  border-radius:16px;
+  overflow:hidden;
+  text-align:center;
+  padding:45px 20px;
+  box-shadow:0 0 25px #00e5ff33;
+  transition:0.3s;
+  cursor:pointer;
+}
+.tool-card:hover{
+  transform:translateY(-6px);
+  box-shadow:0 0 40px #00e5ff55;
+}
+.tool-info h4{
+  margin:8px 0;
+  color:#00e5ff;
+  font-size:22px;
+  font-weight:600;
+}
+.tool-info p{
+  font-size:18px;
+  color:#bbb;
+  min-height:55px;
+  margin-bottom:14px;
+}
+
+/* Button */
+.tool-btn{
+  display:inline-block;
+  margin-top:12px;
+  padding:12px 32px;
+  background:#00e5ff;
+  color:#000;
+  font-weight:bold;
+  border-radius:30px;
+  text-decoration:none;
+  transition:0.3s;
+  font-size:18px;
+}
+.tool-btn:hover{
+  box-shadow:0 0 25px #00e5ff;
+  transform:scale(1.05);
+}
+
+/* Footer */
+footer{
+  text-align:center;
+  padding:25px;
+  color:#777;
+}
+
+/* Responsive */
+@media (max-width:768px){
+  .navbar h1{ font-size:50px; }
+  .navbar nav a{ font-size:20px; }
+  .hero h2{ font-size:38px; }
+  .hero p{ font-size:18px; }
+  .tool-info h4{ font-size:20px; }
+  .tool-info p{ font-size:16px; }
+  .tool-btn{ font-size:16px; padding:10px 28px; }
+}
+@media (max-width:480px){
+  .navbar h1{ font-size:40px; }
+  .navbar nav a{ font-size:18px; }
+  .hero h2{ font-size:32px; }
+  .hero p{ font-size:16px; }
+  .tool-info h4{ font-size:18px; }
+  .tool-info p{ font-size:15px; }
+  .tool-btn{ font-size:14px; padding:8px 24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Navbar -->
+<header class="navbar">
+  <h1>MN ZONEX <span>2.0</span></h1>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="games.html">Games</a>
+    <a href="services.html">Services</a>
+    <a href="business.html">Business</a>
+    <a href="social.html">Social</a>
+    <a href="feedback.html">Feedback</a>
+    <a href="tools.html">Tools</a>
+  </nav>
+</header>
+
+<!-- Hero -->
+<section class="hero">
+  <h2> Useful Tools</h2>
+  <p>10 Essential Digital Tools for Your Work</p>
+</section>
+
+<!-- Tools Grid -->
+<section class="tools-container" id="tools-container"></section>
+
+<!-- Footer -->
+<footer>© 2026 MN ZONEX. All rights reserved.</footer>
+
+<!-- JS -->
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+    document.body.style.opacity = "1"; // fade-in page
+
+    const tools = [
+      {name:"Color Picker", desc:"Pick HEX colors instantly", link:"tools/color-picker.html"},
+      {name:"QR Code Generator", desc:"Create QR codes instantly from text or URLs. Copy or download easily!", link:"tools/qr-generator.html"},
+      {name:"Internet Speed Test", desc:"Check your download speed instantly", link:"tools/internet-speed-test.html"},
+      {name:"Uppercase Converter", desc:"Convert text to UPPERCASE", link:"tools/uppercase.html"},
+      {name:"Lowercase Converter", desc:"Convert text to lowercase", link:"tools/lowercase.html"},
+      {name:"Random Number Generator", desc:"Generate random numbers", link:"tools/random-number.html"},
+      {name:"Copy Text", desc:"Copy text quickly", link:"tools/copy-text.html"},
+      {name:"Date & Time", desc:"Check current date & time", link:"tools/date-time.html"},
+      {name:"Random Color", desc:"Generate random colors", link:"tools/random-color.html"},
+      {name:"Character Counter", desc:"Count total characters", link:"tools/char-counter.html"}
+    ];
+
+    const container = document.getElementById("tools-container");
+    tools.forEach(t=>{
+      container.innerHTML += `
+        <div class="tool-card">
+          <div class="tool-info">
+            <h4>${t.name}</h4>
+            <p>${t.desc}</p>
+            <a href="${t.link}" class="tool-btn">Use Tool</a>
+          </div>
+        </div>
+      `;
+    });
+});
+</script>
+
+</body>
+</html>

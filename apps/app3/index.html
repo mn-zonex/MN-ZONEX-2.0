@@ -1,0 +1,804 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>MN Finance — Personal Expense Tracker (PWA)</title>
+
+<!-- Manifest (embedded) — points to icons in /assets/icons/ -->
+<link rel="manifest" href="data:application/manifest+json,
+{
+  'name':'MN Finance - Personal Expense Tracker',
+  'short_name':'MN Finance',
+  'start_url':'/index.html',
+  'display':'standalone',
+  'background_color':'#0b1220',
+  'theme_color':'#00e5ff',
+  'icons':[
+    {'src':'/assets/icons/finance-192.png','sizes':'192x192','type':'image/png'},
+    {'src':'/assets/icons/finance-512.png','sizes':'512x512','type':'image/png'}
+  ]
+}">
+
+<meta name="theme-color" content="#00e5ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/assets/icons/finance-192.png">
+
+<!-- Chart.js CDN (will be cached by SW when online) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<style>
+/* ------------------ THEME & LAYOUT ------------------ */
+:root {
+  --bg: #0b1220;
+  --card: #0f1724;
+  --muted: #9aa7b2;
+  --accent: #00e5ff;
+  --accent-contrast: #001218;
+  --glass: rgba(255,255,255,0.02);
+  --radius: 12px;
+  --shadow: 0 12px 40px rgba(0,0,0,0.6);
+  --text: #e6f7ff;
+  --ok: #28c76f;
+  --danger: #ff6b6b;
+  font-size: 16px;
+}
+body.light {
+  --bg: #f2f6fb;
+  --card: #fff;
+  --muted: #55606a;
+  --accent: #0066cc;
+  --accent-contrast: #fff;
+  --glass: rgba(0,0,0,0.02);
+  --shadow: 0 10px 30px rgba(0,0,0,0.08);
+  --text: #0b1220;
+  --ok: #1f9a58;
+  --danger: #d43f3a;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif; background: linear-gradient(180deg,var(--bg), #051018 90%); color: var(--text); -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 18px auto;
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 20px;
+  align-items: start;
+  padding: 0 12px;
+}
+
+/* Sidebar (left) */
+.sidebar {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  min-height: 640px;
+  display:flex; flex-direction:column;
+}
+.logo {
+  display:flex; align-items:center; gap:10px;
+}
+.logo .box {
+  width:46px; height:46px; border-radius:10px;
+  background:var(--accent); color:var(--accent-contrast); display:flex; align-items:center; justify-content:center; font-weight:800;
+}
+.app-title { font-size:18px; font-weight:700; }
+.small { color:var(--muted); font-size:13px; }
+
+.summary {
+  margin-top:12px; display:flex; flex-direction:column; gap:8px;
+}
+.summary .card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+  padding:12px; border-radius:10px;
+}
+.balance { font-size:20px; font-weight:800; }
+
+/* Add transaction form */
+.form { margin-top:12px; display:flex; flex-direction:column; gap:8px; }
+.input, select, button { padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:var(--text); }
+.btn { background:var(--accent); color:var(--accent-contrast); border:none; cursor:pointer; padding:10px; border-radius:8px; font-weight:700; }
+.btn.ghost { background:transparent; border:1px solid rgba(255,255,255,0.04); color:var(--muted); }
+
+/* Main panel (center/right) */
+.main {
+  background: var(--card);
+  border-radius:var(--radius);
+  padding:16px;
+  min-height:640px;
+  box-shadow:var(--shadow);
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+/* Transactions list */
+.tx-list { max-height:360px; overflow:auto; display:flex; flex-direction:column; gap:8px; padding-right:6px; }
+.tx { display:flex; justify-content:space-between; align-items:center; padding:10px; border-radius:10px; background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent); }
+.tx .left { display:flex; gap:12px; align-items:center; }
+.tx .category { width:44px;height:44px;border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:700; }
+.tx .meta { font-size:13px; color:var(--muted); }
+
+/* charts area */
+.charts { display:grid; grid-template-columns:1fr 320px; gap:12px; align-items:start; }
+.chart-card { background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent); padding:10px; border-radius:10px; }
+
+/* footer */
+.footer { margin-top:12px; text-align:center; color:var(--muted); font-size:13px; }
+
+/* responsive */
+@media (max-width:1000px) {
+  .container { grid-template-columns: 1fr; }
+  .sidebar { order:2; }
+  .main { order:1; }
+}
+</style>
+</head>
+<body>
+
+<!-- INSTALL-ONLY overlay -->
+<div id="installOverlay" style="position:fixed; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.75), rgba(0,0,0,0.9)); display:flex; align-items:center; justify-content:center; z-index:9999; color:white; text-align:center; padding:20px;">
+  <div style="max-width:640px; background:rgba(0,0,0,0.5); padding:28px; border-radius:12px;">
+    <h2 style="margin:0 0 8px;">MN Finance — Install to use</h2>
+    <p style="color:#ddd;">This app is configured to run **only** when installed (for privacy & offline reliability). Install the PWA to continue.</p>
+    <p style="color:#bbb; font-size:13px;">Chrome/Edge/Android: menu → Install app; iOS: Share → Add to Home Screen.</p>
+    <div style="margin-top:16px;"><button id="closeInstallOverlay" style="padding:10px 14px;border-radius:8px;border:none;background:#333;color:white;cursor:pointer;">Close</button></div>
+  </div>
+</div>
+
+<div class="container" id="app" style="visibility:hidden;">
+
+  <!-- LEFT: Sidebar -->
+  <div class="sidebar">
+    <div class="logo">
+      <div class="box">MN</div>
+      <div>
+        <div class="app-title">MN Finance</div>
+        <div class="small">Personal Expense Tracker</div>
+      </div>
+    </div>
+
+    <div class="summary">
+      <div class="card">
+        <div class="small">Current Balance</div>
+        <div class="balance" id="balanceAmount">0.00 USD</div>
+      </div>
+
+      <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div class="small">This Month Income</div>
+          <div id="monthIncome">0.00</div>
+        </div>
+        <div>
+          <div class="small">This Month Expense</div>
+          <div id="monthExpense">0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;">
+      <div class="small">Quick Add Transaction</div>
+      <div class="form">
+        <select id="quickType" class="input">
+          <option value="expense">Expense</option>
+          <option value="income">Income</option>
+        </select>
+        <input id="quickAmount" class="input" placeholder="Amount (e.g. 12.50)" inputmode="decimal" />
+        <input id="quickCategory" class="input" placeholder="Category (e.g. Food)" />
+        <input id="quickDate" class="input" type="date" />
+        <input id="quickNote" class="input" placeholder="Note (optional)" />
+        <div style="display:flex; gap:8px;">
+          <button id="addQuick" class="btn">Add</button>
+          <button id="openNew" class="btn ghost">Open Advanced</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:12px; display:flex; gap:8px;">
+      <button id="btnExport" class="btn ghost">Export</button>
+      <button id="btnImport" class="btn ghost">Import</button>
+      <button id="btnSettings" class="btn">Settings</button>
+    </div>
+
+    <div style="margin-top:12px;">
+      <div class="small">Search / Filter</div>
+      <input id="search" class="input" placeholder="Search notes, tags, categories..." />
+      <select id="filter" class="input">
+        <option value="">All</option>
+        <option value="expense">Expense</option>
+        <option value="income">Income</option>
+      </select>
+    </div>
+
+    <div style="margin-top:12px;">
+      <div class="small">Categories</div>
+      <div id="categories" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"></div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT / MAIN -->
+  <div class="main">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <div style="font-weight:800; font-size:18px;">Transactions</div>
+        <div class="small" id="txCount">0 transactions</div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <select id="pnlRange" class="input">
+          <option value="1">1 day</option>
+          <option value="7" selected>7 days</option>
+          <option value="30">1 month</option>
+          <option value="365">1 year</option>
+        </select>
+        <button id="openChart" class="btn">Show Charts</button>
+      </div>
+    </div>
+
+    <div class="tx-list" id="txList">
+      <!-- transactions -->
+    </div>
+
+    <div class="charts">
+      <div class="chart-card">
+        <h4 style="margin:4px 0;">PnL (growth)</h4>
+        <canvas id="pnlChart" height="200"></canvas>
+      </div>
+      <div class="chart-card">
+        <h4 style="margin:4px 0;">By Category</h4>
+        <canvas id="catChart" height="200"></canvas>
+      </div>
+    </div>
+
+    <div style="margin-top:12px; display:flex; gap:8px;">
+      <div style="flex:1">
+        <div class="small">Calendar quick view</div>
+        <input id="calendarDate" type="date" class="input" />
+      </div>
+      <div style="width:220px;">
+        <div class="small">Security</div>
+        <button id="changePassword" class="btn ghost">Change Password</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="max-width:1200px; margin:12px auto; text-align:center;">
+  <div class="footer">© 2026 MN ZONEX. All rights reserved. — Donation Binance ID: 766308505</div>
+</div>
+
+<script>
+/*
+  MN Finance — full advanced PWA (single file)
+  - Encryption: PBKDF2 -> AES-GCM
+  - Storage: encrypted JSON saved to localStorage key 'mn_finance_blob'
+  - Charts: Chart.js (already included)
+  - Service worker: registered below (embedded)
+  - Install-only: enforced by overlay (can be toggled in settings)
+*/
+
+// ------------------- Utilities -------------------
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+const STORAGE_KEY = 'mn_finance_blob_v1'; // stores encrypted blob {iv, ciphertext, salt}
+const SETTINGS_KEY = 'mn_finance_settings_v1';
+let SETTINGS = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+if (SETTINGS.installOnly === undefined) SETTINGS.installOnly = true;
+if (!SETTINGS.currency) SETTINGS.currency = 'USD';
+
+// crypto params
+const PBKDF2_ITER = 150000; // strong but not too slow (adjust)
+const SALT_KEY = 'mn_finance_salt_v1';
+
+// app state
+let MASTER_KEY = null; // CryptoKey derived from password
+let ENTRIES = []; // decrypted entries array
+let CHARTS = { pnl: null, cat: null };
+
+// ------------------- Helpers for crypto -------------------
+async function randomSalt() {
+  const s = crypto.getRandomValues(new Uint8Array(16));
+  return btoa(String.fromCharCode(...s));
+}
+async function getOrCreateSalt() {
+  let s = localStorage.getItem(SALT_KEY);
+  if (!s) {
+    s = await randomSalt();
+    localStorage.setItem(SALT_KEY, s);
+  }
+  return s;
+}
+async function deriveKey(password) {
+  const enc = new TextEncoder();
+  const salt = atob(await getOrCreateSalt());
+  const saltBuf = new Uint8Array([...salt].map(c=>c.charCodeAt(0)));
+  const baseKey = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey({
+    name: 'PBKDF2',
+    salt: saltBuf,
+    iterations: PBKDF2_ITER,
+    hash: 'SHA-256'
+  }, baseKey, { name: 'AES-GCM', length: 256 }, false, ['encrypt','decrypt']);
+  return key;
+}
+async function encryptData(key, obj) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const enc = new TextEncoder();
+  const plain = enc.encode(JSON.stringify(obj));
+  const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plain);
+  const b64 = btoa(String.fromCharCode(...new Uint8Array(cipher)));
+  const ivb64 = btoa(String.fromCharCode(...iv));
+  return { iv: ivb64, data: b64 };
+}
+async function decryptData(key, blob) {
+  if (!blob || !blob.data || !blob.iv) return null;
+  const iv = Uint8Array.from(atob(blob.iv), c => c.charCodeAt(0));
+  const cipher = Uint8Array.from(atob(blob.data), c => c.charCodeAt(0));
+  try {
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipher);
+    const dec = new TextDecoder();
+    return JSON.parse(dec.decode(plain));
+  } catch (e) {
+    console.warn('Decrypt failed', e);
+    throw new Error('Decrypt failed');
+  }
+}
+
+// ------------------- Persistent storage (encrypted) -------------------
+async function saveEntriesEncrypted() {
+  if (!MASTER_KEY) throw new Error('No MASTER_KEY');
+  const blob = await encryptData(MASTER_KEY, ENTRIES);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(blob));
+}
+async function loadEntriesEncrypted() {
+  if (!MASTER_KEY) throw new Error('No MASTER_KEY');
+  const blobRaw = localStorage.getItem(STORAGE_KEY);
+  if (!blobRaw) { ENTRIES = []; return; }
+  const blob = JSON.parse(blobRaw);
+  const data = await decryptData(MASTER_KEY, blob);
+  ENTRIES = Array.isArray(data) ? data : [];
+}
+
+// ------------------- Password / first-time flow -------------------
+const PASSWORD_HASH_KEY = 'mn_finance_pass_hash_v1';
+
+async function sha256Hex(s) {
+  const enc = new TextEncoder();
+  const buf = await crypto.subtle.digest('SHA-256', enc.encode(s));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function firstTimeSetup() {
+  // If password not set -> prompt user to set password
+  const stored = localStorage.getItem(PASSWORD_HASH_KEY);
+  if (!stored) {
+    let pass = null;
+    while (true) {
+      pass = prompt('Welcome — set a password to protect your finance data (min 6 chars). You must remember this password.');
+      if (pass === null) {
+        alert('Password is required. Reload to try again.');
+        return false;
+      }
+      if (pass.length < 6) { alert('Please enter at least 6 characters'); continue; }
+      break;
+    }
+    const hash = await sha256Hex(pass);
+    localStorage.setItem(PASSWORD_HASH_KEY, hash);
+    MASTER_KEY = await deriveKey(pass);
+    // create empty entries and save encrypted
+    ENTRIES = [];
+    await saveEntriesEncrypted();
+    return true;
+  } else {
+    // prompt to enter password
+    for (let i=0;i<5;i++) {
+      const pass = prompt('Enter your diary password to unlock:');
+      if (pass === null) { alert('Password required.'); continue; }
+      const h = await sha256Hex(pass);
+      if (h === stored) {
+        MASTER_KEY = await deriveKey(pass);
+        // decrypt entries
+        try {
+          await loadEntriesEncrypted();
+        } catch (err) {
+          alert('Failed to decrypt data — wrong password or corrupted data.');
+          MASTER_KEY = null;
+          return false;
+        }
+        return true;
+      } else {
+        alert('Incorrect password. Try again.');
+      }
+    }
+    alert('Too many failed attempts.');
+    return false;
+  }
+}
+
+async function changePasswordFlow() {
+  const stored = localStorage.getItem(PASSWORD_HASH_KEY);
+  if (!stored) { alert('No password set.'); return; }
+  const current = prompt('Enter your current password:');
+  if (!current) return;
+  const hcur = await sha256Hex(current);
+  if (hcur !== stored) { alert('Wrong password'); return; }
+  const newp = prompt('Enter new password (min 6 chars):');
+  if (!newp || newp.length < 6) { alert('Cancelled or invalid'); return; }
+  // derive new key and re-encrypt
+  const oldKey = MASTER_KEY;
+  const newKey = await deriveKey(newp);
+  // decrypt (we already have ENTRIES) -> re-encrypt with new key and store
+  MASTER_KEY = newKey;
+  await saveEntriesEncrypted(); // uses MASTER_KEY
+  localStorage.setItem(PASSWORD_HASH_KEY, await sha256Hex(newp));
+  alert('Password changed successfully');
+}
+
+// ------------------- Application logic: Entries CRUD -------------------
+/* entry structure:
+  {
+    id: 'entry-...',
+    amount: number,
+    type: 'income'|'expense',
+    category: 'Food',
+    date: ISO string,
+    note: '...'
+    tags: ['x','y'],
+    recurring: { freq: 'daily|weekly|monthly', until: ISO } | null,
+    images: [dataURI], drawings: [dataURI],
+    createdAt, updatedAt
+  }
+*/
+
+function addEntryLocal(e) {
+  ENTRIES.push(e);
+  saveEntriesEncrypted().then(()=> {
+    refreshUI();
+  }).catch(err => { console.error(err); alert('Save failed'); });
+}
+
+function updateEntryLocal(id, patch) {
+  const idx = ENTRIES.findIndex(x=>x.id===id);
+  if (idx === -1) return false;
+  ENTRIES[idx] = Object.assign({}, ENTRIES[idx], patch, { updatedAt: new Date().toISOString() });
+  saveEntriesEncrypted().then(()=> refreshUI());
+  return true;
+}
+
+function deleteEntryLocal(id) {
+  if (!confirm('Delete this transaction?')) return;
+  ENTRIES = ENTRIES.filter(e=>e.id!==id);
+  saveEntriesEncrypted().then(()=> refreshUI());
+}
+
+// ------------------- UI bindings -------------------
+const installOverlay = document.getElementById('installOverlay');
+$('#closeInstallOverlay').addEventListener('click', ()=> installOverlay.style.display='none');
+
+async function initApp() {
+  // enforce install-only
+  enforceInstallOnlyUI();
+
+  // ask password / unlock
+  const ok = await firstTimeSetup();
+  if (!ok) {
+    // show limited UI (or close)
+    alert('App locked. Reload to try again.');
+    return;
+  }
+
+  // initial refresh UI
+  refreshUI();
+
+  // hook quick-add
+  $('#addQuick').addEventListener('click', onQuickAdd);
+  $('#openNew').addEventListener('click', ()=> {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    alert('Full entry editor coming later (in this UI use quick-add)');
+  });
+  $('#btnExport').addEventListener('click', exportBackup);
+  $('#btnImport').addEventListener('click', importBackup);
+  $('#btnSettings').addEventListener('click', openSettings);
+  $('#search').addEventListener('input', refreshUI);
+  $('#filter').addEventListener('change', refreshUI);
+  $('#pnlRange').addEventListener('change', ()=> drawCharts());
+  $('#openChart').addEventListener('click', ()=> drawCharts(true));
+  $('#calendarDate').addEventListener('change', ()=> { const d = $('#calendarDate').value; if (d) viewDay(d); });
+  $('#btnImport').addEventListener('click', importBackup);
+  $('#changePassword').addEventListener('click', () => changePasswordFlow());
+}
+
+function enforceInstallOnlyUI() {
+  if (SETTINGS.installOnly && !isInstalledPWA()) {
+    installOverlay.style.display = 'flex';
+    $('#app').style.visibility = 'hidden';
+  } else {
+    installOverlay.style.display = 'none';
+    $('#app').style.visibility = 'visible';
+  }
+}
+
+function isInstalledPWA() {
+  return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+}
+
+/* Quick add handler */
+function onQuickAdd() {
+  const amount = parseFloat($('#quickAmount').value);
+  const type = $('#quickType').value;
+  const category = $('#quickCategory').value || 'Misc';
+  const date = $('#quickDate').value || (new Date()).toISOString().slice(0,10);
+  const note = $('#quickNote').value || '';
+  if (!amount || isNaN(amount)) { alert('Enter amount'); return; }
+  const entry = {
+    id: 'e-'+Date.now()+'-'+Math.floor(Math.random()*9999),
+    amount: Math.round(amount*100)/100,
+    type,
+    category,
+    date: date + 'T00:00:00Z',
+    note, tags: [], recurring: null,
+    images: [], drawings: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  addEntryLocal(entry);
+  // clear quick form
+  $('#quickAmount').value = '';
+  $('#quickNote').value = '';
+  refreshUI();
+}
+
+/* Refresh UI - list, summary, categories, charts */
+function refreshUI() {
+  // load entries into memory variable (already ENTRIES)
+  // Apply filters
+  const q = ($('#search').value || '').toLowerCase();
+  const typeFilter = $('#filter').value;
+  const filtered = ENTRIES.filter(e => {
+    if (typeFilter && e.type !== typeFilter) return false;
+    if (!q) return true;
+    return (e.note && e.note.toLowerCase().includes(q)) || (e.category && e.category.toLowerCase().includes(q)) || (e.tags && e.tags.join(' ').toLowerCase().includes(q));
+  }).sort((a,b)=> new Date(b.date) - new Date(a.date));
+  // populate list
+  const txList = $('#txList'); txList.innerHTML = '';
+  filtered.forEach(e => {
+    const div = document.createElement('div');
+    div.className = 'tx';
+    div.innerHTML = `<div class="left"><div class="category" style="background:${e.type==='income'?'rgba(40,200,120,0.12)':'rgba(255,90,90,0.08)'}">${escapeHtml(e.category.slice(0,2))}</div>
+      <div style="display:flex;flex-direction:column;">
+        <div style="font-weight:700">${escapeHtml(e.note||e.category)}</div>
+        <div class="meta">${new Date(e.date).toLocaleDateString()} • ${e.type}</div>
+      </div></div>
+      <div style="text-align:right;">
+        <div style="font-weight:800;color:${e.type==='income'?'var(--ok)':'var(--danger)'}">${e.type==='income'?'+':'-'} ${formatCurrency(e.amount)}</div>
+        <div class="meta">${new Date(e.createdAt).toLocaleString()}</div>
+        <div style="margin-top:6px;"><button class="btn ghost" data-id="${e.id}" onclick="editEntry(event)">Edit</button> <button class="btn ghost" data-id="${e.id}" onclick="deleteEntryLocal(event.target.dataset.id)">Delete</button></div>
+      </div>`;
+    txList.appendChild(div);
+  });
+  $('#txCount').textContent = filtered.length + ' transactions';
+  // summary: balance, month income/expense
+  computeSummary();
+  drawCharts(); // update charts
+  renderCategories();
+}
+
+/* compute balance & month totals */
+function computeSummary() {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  let balance = 0, minc = 0, mexp = 0;
+  ENTRIES.forEach(e => {
+    if (e.type === 'income') balance += e.amount;
+    else balance -= e.amount;
+    const d = new Date(e.date);
+    if (d >= monthStart && d <= now) {
+      if (e.type === 'income') minc += e.amount; else mexp += e.amount;
+    }
+  });
+  $('#balanceAmount').textContent = formatCurrency(balance) + ' ' + SETTINGS.currency;
+  $('#monthIncome').textContent = formatCurrency(minc);
+  $('#monthExpense').textContent = formatCurrency(mexp);
+}
+
+/* format currency */
+function formatCurrency(v) {
+  return (Math.round(v*100)/100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/* categories render */
+function renderCategories() {
+  const cats = {};
+  ENTRIES.forEach(e => { cats[e.category] = (cats[e.category]||0) + (e.type==='expense' ? e.amount : -e.amount); });
+  const container = $('#categories'); container.innerHTML = '';
+  Object.keys(cats).slice(0,30).forEach(k => {
+    const b = document.createElement('button'); b.className = 'btn ghost'; b.textContent = k; b.addEventListener('click', ()=> { $('#search').value = k; refreshUI(); });
+    container.appendChild(b);
+  });
+}
+
+/* edit flow (simple prompt-based for demo) */
+async function editEntry(evOrId) {
+  let id = typeof evOrId === 'string' ? evOrId : evOrId.target.dataset.id;
+  const entry = ENTRIES.find(x=>x.id===id);
+  if (!entry) { alert('Entry not found'); return; }
+  const newNote = prompt('Edit note', entry.note || '');
+  if (newNote === null) return;
+  updateEntryLocal(id, { note: newNote });
+}
+
+/* view day */
+function viewDay(dateStr) {
+  const day = new Date(dateStr);
+  const list = ENTRIES.filter(e => new Date(e.date).toISOString().slice(0,10) === day.toISOString().slice(0,10));
+  if (!list.length) { alert('No entries on this day'); return; }
+  const s = list.map(e=>`${e.date.slice(0,10)} ${e.type} ${formatCurrency(e.amount)} - ${e.category} - ${e.note||''}`).join('\n');
+  alert('Entries:\n' + s);
+}
+
+// ----------------------- Charts (Chart.js) -----------------------
+function drawCharts(forceOpen=false) {
+  const days = parseInt($('#pnlRange').value, 10) || 7;
+  // pnl chart: daily balance changes over last N days
+  const now = new Date(); const arrDates = [];
+  for (let i=days-1;i>=0;i--) {
+    const d = new Date(now); d.setDate(now.getDate() - i);
+    arrDates.push(d.toISOString().slice(0,10));
+  }
+  const pnlData = arrDates.map(date => {
+    const entries = ENTRIES.filter(e => e.date.slice(0,10) <= date);
+    // compute total balance up to that date
+    let total = 0;
+    entries.forEach(en => { total += (en.type==='income'?en.amount:-en.amount); });
+    return total;
+  });
+
+  // create/update Chart.js line
+  const ctx = document.getElementById('pnlChart').getContext('2d');
+  if (CHARTS.pnl) CHARTS.pnl.destroy();
+  CHARTS.pnl = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: arrDates,
+      datasets: [{
+        label: 'Balance',
+        data: pnlData,
+        borderColor: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#00e5ff',
+        backgroundColor: 'rgba(0,200,255,0.08)',
+        fill: true,
+        tension: 0.25
+      }]
+    },
+    options: { responsive:true, plugins:{legend:{display:false}} }
+  });
+
+  // category donut for chosen range
+  const fromDate = new Date(); fromDate.setDate(now.getDate() - (days-1));
+  const catMap = {};
+  ENTRIES.forEach(e => {
+    const d = new Date(e.date);
+    if (d >= fromDate && d <= now) {
+      const key = e.category || 'Misc';
+      catMap[key] = (catMap[key]||0) + (e.type==='expense' ? e.amount : -e.amount);
+    }
+  });
+  const labels = Object.keys(catMap);
+  const data = labels.map(l => Math.abs(catMap[l]));
+  const ctx2 = document.getElementById('catChart').getContext('2d');
+  if (CHARTS.cat) CHARTS.cat.destroy();
+  CHARTS.cat = new Chart(ctx2, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: labels.map((_,i)=>chartColor(i)) }] },
+    options: { responsive:true, plugins:{legend:{position:'bottom'}} }
+  });
+
+  if (forceOpen) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function chartColor(i) {
+  const palette = ['#00e5ff','#00c4a7','#ffaa00','#ff6b6b','#8e44ad','#2ecc71','#3498db','#f39c12'];
+  return palette[i % palette.length];
+}
+
+// ---------------- Export / Import ----------------
+function exportBackup() {
+  if (!MASTER_KEY) { alert('Locked'); return; }
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) { alert('No data to export'); return; }
+  const blob = new Blob([raw], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'mn_finance_backup.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importBackup() {
+  const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json';
+  inp.onchange = async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    const txt = await f.text();
+    try {
+      JSON.parse(txt); // ensure valid
+      localStorage.setItem(STORAGE_KEY, txt);
+      alert('Imported encrypted backup. Reload to decrypt.');
+      location.reload();
+    } catch (err) {
+      alert('Invalid file');
+    }
+  };
+  inp.click();
+}
+
+// ------------------- Helpers -------------------
+function escapeHtml(s) { return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+
+// ------------------ Service worker registration (embedded) ------------------
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    const swCode = `
+      const CACHE_NAME = 'mn-finance-cache-v1';
+      const urlsToCache = ['/', '/index.html', '/assets/icons/finance-192.png', '/assets/icons/finance-512.png', 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js'];
+      self.addEventListener('install', event => {
+        event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache)).catch(()=>{})));
+      });
+      self.addEventListener('fetch', event => {
+        const req = event.request;
+        event.respondWith(caches.match(req).then(resp => resp || fetch(req)).catch(()=>caches.match('/index.html')));
+      });
+    `;
+    try {
+      const blob = new Blob([swCode], { type: 'application/javascript' });
+      navigator.serviceWorker.register(URL.createObjectURL(blob)).then(() => console.log('SW registered'));
+    } catch (e) {
+      console.warn('SW register error', e);
+    }
+  });
+}
+
+// ------------------- Install prompt handling -------------------
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // you can show custom install button now if wanted
+  console.log('install prompt captured');
+});
+$('#app') && $('#app').addEventListener('click', ()=> { enforceInstallOnlyUI(); });
+
+// ------------------- On load: bootstrap -------------------
+(async function() {
+  // ensure salt exists
+  await getOrCreateSalt();
+  // enforce setting defaults
+  if (SETTINGS.installOnly === undefined) SETTINGS.installOnly = true;
+  // Show app or overlay based on install-only
+  enforceInstallOnlyUI();
+  // Wait and show UI (but first need password/unlock)
+  try {
+    const unlocked = await firstTimeSetup();
+    if (!unlocked) {
+      // show overlay so user must install or reload later
+      console.warn('Not unlocked');
+      // show minimal app so user can set password after install
+      document.getElementById('app').style.visibility = 'visible';
+      return;
+    }
+    // After unlocked & entries loaded, show app and initialize handlers
+    document.getElementById('app').style.visibility = 'visible';
+    await initApp();
+  } catch (err) {
+    console.error(err);
+    alert('Initialization error: ' + (err.message || err));
+  }
+})();
+
+</script>
+
+</body>
+</html>

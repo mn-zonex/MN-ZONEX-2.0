@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>MN Calculator Pro — Advanced</title>
+
+<!-- Embedded manifest (points to app icons in /assets/icons/) -->
+<link rel="manifest" href="data:application/manifest+json,
+{
+  'name':'MN Calculator Pro',
+  'short_name':'CalcPro',
+  'start_url':'/index.html',
+  'display':'standalone',
+  'background_color':'#000000',
+  'theme_color':'#00e5ff',
+  'icons':[ 
+    {'src':'/assets/icons/calculator-192.png','sizes':'192x192','type':'image/png'},
+    {'src':'/assets/icons/calculator-512.png','sizes':'512x512','type':'image/png'}
+  ]
+}">
+
+<meta name="theme-color" content="#00e5ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/assets/icons/calculator-192.png">
+
+<style>
+/* ---------- THEME & LAYOUT ---------- */
+:root{
+  --bg: #0b0b0b;
+  --card: #111;
+  --muted: #9aa7b2;
+  --accent: #00e5ff;
+  --accent-contrast: #000;
+  --btn: linear-gradient(180deg,#00e5ff,#00c4e6);
+  --glass: rgba(255,255,255,0.03);
+  --radius: 14px;
+  --shadow: 0 8px 30px rgba(0,0,0,0.6);
+  --font-sans: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
+}
+body.light{
+  --bg: #f3f6f9;
+  --card: #fff;
+  --muted: #55606a;
+  --accent: #0057d9;
+  --accent-contrast: #fff;
+  --btn: linear-gradient(180deg,#0057d9,#003f9b);
+  --glass: rgba(0,0,0,0.03);
+  --shadow: 0 8px 30px rgba(0,0,0,0.08);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:var(--font-sans);
+  background:linear-gradient(180deg,var(--bg), #050505 80%);
+  color:var(--accent-contrast);
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  padding:20px;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+/* container */
+.app {
+  width:100%;
+  max-width:1100px;
+  display:grid;
+  grid-template-columns: 420px 1fr;
+  gap:28px;
+  align-items:start;
+}
+
+/* left column: calculator */
+.panel {
+  background:var(--card);
+  border-radius:var(--radius);
+  padding:20px;
+  box-shadow:var(--shadow);
+  min-height:420px;
+}
+.header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin-bottom:12px;
+}
+.brand {
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.logo {
+  width:46px; height:46px; border-radius:10px;
+  background:var(--accent); display:flex; align-items:center; justify-content:center; color:var(--accent-contrast);
+  font-weight:800; box-shadow:0 6px 18px rgba(0,0,0,0.3);
+}
+.title { font-size:18px; font-weight:700; color:var(--accent-contrast); }
+.subtitle { font-size:12px; color:var(--muted); }
+
+/* display */
+.display {
+  background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border-radius:12px; padding:16px; margin-bottom:14px; min-height:86px;
+  display:flex; flex-direction:column; justify-content:center;
+}
+.history-row { font-size:12px; color:var(--muted); opacity:0.95; margin-bottom:6px; display:flex; justify-content:space-between; gap:10px;}
+.screen {
+  font-size:28px; font-weight:700; color:var(--accent-contrast); text-align:right; word-break:break-all;
+  max-width:100%; overflow-x:auto;
+}
+
+/* keypad */
+.keypad { display:grid; grid-template-columns: repeat(5,1fr); gap:10px; margin-top:8px; }
+.key { padding:14px; border-radius:12px; border:none; font-size:16px; cursor:pointer; transition:transform .12s, box-shadow .12s; }
+.key:active{ transform:translateY(2px); }
+.key.gray { background: rgba(255,255,255,0.03); color:var(--muted); }
+.key.accent { background: var(--btn); color:var(--accent-contrast); font-weight:700; box-shadow: 0 6px 18px rgba(0,0,0,0.25); }
+.key.big { grid-column: span 2; }
+.small-note { font-size:11px; color:var(--muted); }
+
+/* right column: converters + history + settings  */
+.right-panel {
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+}
+.card {
+  background:var(--card);
+  border-radius:var(--radius);
+  padding:16px;
+  box-shadow:var(--shadow);
+}
+.card h3 { margin:0 0 10px 0; font-size:16px; color:var(--accent-contrast); }
+.flex { display:flex; gap:10px; align-items:center; }
+
+/* converters */
+.row { display:flex; gap:10px; align-items:center; }
+.input, select, button.small { padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:var(--accent-contrast); flex:1; }
+.button-primary { padding:10px 14px; border-radius:8px; border:none; background:var(--btn); color:var(--accent-contrast); font-weight:700; cursor:pointer; }
+
+/* history list */
+.history-list { max-height:240px; overflow:auto; margin-top:8px; display:flex; flex-direction:column; gap:8px; }
+.history-item { background:var(--glass); border-radius:10px; padding:10px; display:flex; justify-content:space-between; align-items:center; font-size:13px; color:var(--muted); }
+
+/* settings */
+.settings-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; align-items:center; }
+
+/* footer */
+.footer { text-align:center; color:var(--muted); font-size:13px; margin-top:12px; }
+
+/* responsive */
+@media (max-width:980px){
+  .app { grid-template-columns: 1fr; }
+  .panel { order:2; }
+  .right-panel { order:1; }
+}
+</style>
+</head>
+<body>
+
+<!-- INSTALL-ONLY overlay (shown if not installed) -->
+<div id="installOverlay" style="position:fixed; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.7), rgba(0,0,0,0.9)); display:flex; align-items:center; justify-content:center; z-index:9999; color:white; text-align:center; padding:20px;">
+  <div style="max-width:560px; background:rgba(0,0,0,0.5); padding:26px; border-radius:14px;">
+    <h2 style="margin-top:0;">MN Calculator Pro</h2>
+    <p style="color:#ddd;">This app requires installation to run. Please install the PWA to use the full features (offline & secure mode).</p>
+    <p style="font-size:14px;color:#bbb;">On Chrome/Edge/Android: use browser menu → "Install app" or wait for the Add to Home Screen prompt.<br/>On iOS: tap Share → Add to Home Screen.</p>
+    <div style="margin-top:16px; display:flex; gap:10px; justify-content:center;">
+      <button id="installInstructionsClose" style="padding:10px 14px; border-radius:8px; border:none; background:#444; color:white; cursor:pointer;">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="appRoot" aria-hidden="true" style="visibility:hidden;">
+  <!-- LEFT: Calculator -->
+  <div class="panel">
+    <div class="header">
+      <div class="brand">
+        <div class="logo">CP</div>
+        <div>
+          <div class="title">MN Calculator Pro</div>
+          <div class="subtitle">Advanced • Offline-ready • Install-only</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <div class="small-note" id="versionNote">v1.0</div>
+        <button id="openSettingsBtn" class="key gray" title="Settings" aria-label="Open settings">⚙️</button>
+      </div>
+    </div>
+
+    <div class="display" role="region" aria-label="Calculator display">
+      <div class="history-row">
+        <div class="small-note">Ans</div>
+        <div class="small-note" id="ansPreview">0</div>
+      </div>
+      <div id="screen" class="screen" aria-live="polite">0</div>
+    </div>
+
+    <div class="keypad" role="group" aria-label="Calculator keypad">
+      <!-- Row 1 -->
+      <button class="key gray" data-action="toggle-mode">Deg/Rad</button>
+      <button class="key gray" data-value="(">(</button>
+      <button class="key gray" data-value=")">)</button>
+      <button class="key gray" data-fn="sqrt">√</button>
+      <button class="key gray" data-fn="percent">%</button>
+
+      <!-- Row 2 -->
+      <button class="key" data-value="7">7</button>
+      <button class="key" data-value="8">8</button>
+      <button class="key" data-value="9">9</button>
+      <button class="key accent" data-value="/">÷</button>
+      <button class="key gray" data-fn="pow">^</button>
+
+      <!-- Row 3 -->
+      <button class="key" data-value="4">4</button>
+      <button class="key" data-value="5">5</button>
+      <button class="key" data-value="6">6</button>
+      <button class="key accent" data-value="*">×</button>
+      <button class="key gray" data-fn="factorial">x!</button>
+
+      <!-- Row 4 -->
+      <button class="key" data-value="1">1</button>
+      <button class="key" data-value="2">2</button>
+      <button class="key" data-value="3">3</button>
+      <button class="key accent" data-value="-">−</button>
+      <button class="key gray" data-fn="recip">1/x</button>
+
+      <!-- Row 5 -->
+      <button class="key" data-value="0">0</button>
+      <button class="key" data-value=".">.</button>
+      <button class="key gray" data-action="clear">C</button>
+      <button class="key accent" data-value="+">+</button>
+      <button class="key accent" data-action="equals" style="grid-column: span 1; background:var(--accent); color:var(--accent-contrast);">=</button>
+
+      <!-- Row 6: scientific small row -->
+      <button class="key gray" data-fn="sin">sin</button>
+      <button class="key gray" data-fn="cos">cos</button>
+      <button class="key gray" data-fn="tan">tan</button>
+      <button class="key gray" data-fn="log">log</button>
+      <button class="key gray" data-fn="ln">ln</button>
+    </div>
+
+    <!-- Memory & history controls -->
+    <div style="display:flex;gap:8px;margin-top:12px;align-items:center;">
+      <button class="key gray" data-action="Mplus">M+</button>
+      <button class="key gray" data-action="Mminus">M-</button>
+      <button class="key gray" data-action="MR">MR</button>
+      <button class="key gray" data-action="MC">MC</button>
+      <div style="flex:1"></div>
+      <button class="key gray" id="clearHistory">Clear History</button>
+    </div>
+  </div>
+
+  <!-- RIGHT: converters, history, settings -->
+  <div class="right-panel">
+    <div class="card">
+      <h3>Quick Converters</h3>
+      <div class="row" style="margin-bottom:8px;">
+        <input id="convValue" class="input" type="number" placeholder="Value" />
+        <select id="convCategory" class="input">
+          <option value="length">Length</option>
+          <option value="weight">Weight</option>
+          <option value="temperature">Temperature</option>
+          <option value="volume">Volume</option>
+          <option value="currency">Currency (live)</option>
+        </select>
+      </div>
+
+      <div class="row" style="margin-bottom:8px;">
+        <select id="convFrom" class="input"></select>
+        <select id="convTo" class="input"></select>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button id="convGo" class="button-primary">Convert</button>
+        <div id="convResult" style="font-weight:700; margin-left:8px;">—</div>
+      </div>
+      <div id="convNote" class="small-note" style="margin-top:8px;color:var(--muted);">Currency needs internet — you'll see warning when offline.</div>
+    </div>
+
+    <div class="card">
+      <h3>History</h3>
+      <div class="history-list" id="historyList" aria-live="polite"></div>
+      <div style="margin-top:10px;display:flex;gap:8px;">
+        <button class="button-primary" id="pasteAns">Paste Ans</button>
+        <button class="key" id="copyHistory">Copy</button>
+      </div>
+    </div>
+
+    <div class="card" id="settingsCard" style="display:none;">
+      <h3>Settings</h3>
+      <div class="settings-grid">
+        <label>Font:
+          <select id="uiFont">
+            <option value="system-ui, -apple-system, 'Segoe UI', Roboto, Arial">System</option>
+            <option value="Georgia, serif">Georgia</option>
+            <option value="'Courier New', monospace">Courier</option>
+            <option value="'Montserrat', sans-serif">Montserrat</option>
+          </select>
+        </label>
+        <label>Font size:
+          <select id="uiFontSize">
+            <option value="14">14px</option>
+            <option value="16" selected>16px</option>
+            <option value="18">18px</option>
+            <option value="20">20px</option>
+          </select>
+        </label>
+
+        <label>Background color:
+          <input type="color" id="bgColorPick" value="#0b0b0b">
+        </label>
+        <label>Accent color:
+          <input type="color" id="accentColorPick" value="#00e5ff">
+        </label>
+
+        <label>Install-only:
+          <select id="installOnly"><option value="true" selected>Require installation</option><option value="false">Allow browser</option></select>
+        </label>
+        <div style="grid-column: span 2;">
+          <button class="button-primary" id="saveSettingsBtn">Save Settings</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>About & Help</h3>
+      <p class="small-note">Install app to use offline & get full app-like experience. Currency conversion uses exchangerate.host API.</p>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button id="installBtn" class="button-primary">Install app</button>
+        <button id="openSettingsBtn2" class="key">Settings</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer" style="width:100%; max-width:1100px; margin-top:18px;">
+  © 2026 MN ZONEX. All rights reserved. — Donation Binance ID: 766308505
+</div>
+
+<script>
+/* -------------------------
+   Utility & Basic Setup
+   ------------------------- */
+
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e; // allow calling later
+});
+
+const APP_STATE = {
+  lastAns: 0,
+  memory: 0,
+  history: JSON.parse(localStorage.getItem('calc_history') || '[]'),
+  settings: JSON.parse(localStorage.getItem('calc_settings') || '{}'),
+  installOnly: true
+};
+
+// Load saved settings
+if (APP_STATE.settings) {
+  if (APP_STATE.settings.installOnly !== undefined) {
+    APP_STATE.installOnly = APP_STATE.settings.installOnly;
+  }
+}
+
+/* -------------------------
+   INSTALL-ONLY ENFORCEMENT
+   ------------------------- */
+
+function isRunningAsPWA() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+// On load, check whether allowed
+function enforceInstallOnly() {
+  const overlay = document.getElementById('installOverlay');
+  const appRoot = document.getElementById('appRoot');
+
+  const allowBrowser = (APP_STATE.installOnly === false);
+  if (!isRunningAsPWA() && !allowBrowser) {
+    overlay.style.display = 'flex';
+    appRoot.style.visibility = 'hidden';
+    appRoot.setAttribute('aria-hidden', 'true');
+  } else {
+    overlay.style.display = 'none';
+    appRoot.style.visibility = 'visible';
+    appRoot.removeAttribute('aria-hidden');
+  }
+}
+
+window.addEventListener('load', () => {
+  // fill conv selects and UI
+  populateConverters();
+  loadHistoryUI();
+  applySavedSettings();
+  enforceInstallOnly();
+});
+
+/* close overlay quick */
+document.getElementById('installInstructionsClose').addEventListener('click', () => {
+  document.getElementById('installOverlay').style.display = 'none';
+});
+
+/* install button uses deferred prompt */
+document.getElementById('installBtn').addEventListener('click', async () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const choice = await deferredPrompt.userChoice;
+    if (choice.outcome === 'accepted') {
+      // user installed
+      setTimeout(()=>location.reload(), 700);
+    }
+    deferredPrompt = null;
+  } else {
+    alert('Install prompt not available — use browser menu to install (Add to Home Screen).');
+  }
+});
+
+/* settings open */
+document.getElementById('openSettingsBtn').addEventListener('click', () => toggleSettings());
+document.getElementById('openSettingsBtn2').addEventListener('click', () => toggleSettings());
+
+function toggleSettings() {
+  const s = document.getElementById('settingsCard');
+  s.style.display = (s.style.display === 'none' || s.style.display === '') ? 'block' : 'none';
+}
+
+/* -------------------------
+   SETTINGS SAVE / APPLY
+   ------------------------- */
+document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+  const font = document.getElementById('uiFont').value;
+  const size = document.getElementById('uiFontSize').value;
+  const bg = document.getElementById('bgColorPick').value;
+  const accent = document.getElementById('accentColorPick').value;
+  const installOnlyValue = document.getElementById('installOnly').value === 'true';
+  APP_STATE.settings = { font, size, bg, accent, installOnly: installOnlyValue };
+  localStorage.setItem('calc_settings', JSON.stringify(APP_STATE.settings));
+  applySavedSettings();
+  APP_STATE.installOnly = installOnlyValue;
+  enforceInstallOnly();
+  alert('Settings saved');
+});
+
+function applySavedSettings() {
+  const s = APP_STATE.settings || {};
+  if (s.font) document.body.style.fontFamily = s.font;
+  if (s.size) document.body.style.fontSize = s.size + 'px';
+  if (s.bg) document.documentElement.style.setProperty('--bg', s.bg);
+  if (s.accent) {
+    document.documentElement.style.setProperty('--accent', s.accent);
+    document.documentElement.style.setProperty('--btn', `linear-gradient(180deg, ${s.accent}, ${shadeColor(s.accent, -20)})`);
+  }
+  // pre-fill controls
+  if (s.font) document.getElementById('uiFont').value = s.font;
+  if (s.size) document.getElementById('uiFontSize').value = s.size;
+  if (s.bg) document.getElementById('bgColorPick').value = s.bg;
+  if (s.accent) document.getElementById('accentColorPick').value = s.accent;
+  if (s.installOnly !== undefined) document.getElementById('installOnly').value = s.installOnly ? 'true' : 'false';
+}
+
+/* Utility: shade color */
+function shadeColor(col, percent) {
+  // input hex #rrggbb
+  const f = parseInt(col.slice(1),16), t = percent<0?0:255, p = Math.abs(percent)/100;
+  const R = f>>16, G = f>>8 & 0x00FF, B = f & 0x0000FF;
+  const newR = Math.round((t-R)*p)+R, newG = Math.round((t-G)*p)+G, newB = Math.round((t-B)*p)+B;
+  return `#${(0x1000000 + (newR<<16) + (newG<<8) + newB).toString(16).slice(1)}`;
+}
+
+/* -------------------------
+   Calculator Engine (safe-ish evaluator)
+   supports: + - * / ^ % parentheses, sin/cos/tan (deg/rad), sqrt, ln, log10, factorial
+   ------------------------- */
+
+let degMode = true; // default degree
+let displayValue = '0';
+let memory = parseFloat(localStorage.getItem('calc_memory') || '0');
+
+const screen = document.getElementById('screen');
+const ansPreview = document.getElementById('ansPreview');
+
+function updateScreen() {
+  screen.textContent = displayValue;
+  ansPreview.textContent = APP_STATE.lastAns;
+}
+
+function pushToHistory(expr, result) {
+  const item = { expr, result, when: new Date().toLocaleString() };
+  APP_STATE.history.unshift(item);
+  if (APP_STATE.history.length > 100) APP_STATE.history.pop();
+  localStorage.setItem('calc_history', JSON.stringify(APP_STATE.history));
+  loadHistoryUI();
+  APP_STATE.lastAns = result;
+  localStorage.setItem('calc_lastAns', result);
+}
+
+function loadHistoryUI() {
+  const list = document.getElementById('historyList');
+  list.innerHTML = '';
+  APP_STATE.history.forEach((h, idx) => {
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    div.innerHTML = `<div style="max-width:75%"><strong>${h.expr}</strong><div style="font-size:12px;color:var(--muted)">${h.when}</div></div><div style="text-align:right">${h.result}</div>`;
+    div.addEventListener('click', () => {
+      displayValue = h.result.toString();
+      updateScreen();
+    });
+    list.appendChild(div);
+  });
+}
+loadHistoryUI();
+
+/* Button handlers */
+document.querySelectorAll('.key').forEach(k => {
+  k.addEventListener('click', (e) => {
+    const btn = e.currentTarget;
+    const val = btn.dataset.value;
+    const fn = btn.dataset.fn;
+    const action = btn.dataset.action;
+    if (action === 'clear') { displayValue = '0'; updateScreen(); return; }
+    if (action === 'equals') { evaluateExpression(); return; }
+    if (action === 'toggle-mode') { degMode = !degMode; btn.textContent = degMode ? 'Deg' : 'Rad'; return; }
+
+    if (val !== undefined) {
+      if (displayValue === '0') displayValue = val;
+      else displayValue += val;
+      updateScreen();
+      return;
+    }
+    if (fn) {
+      applyFunction(fn);
+      return;
+    }
+    // memory actions
+    if (action === 'Mplus') { memory += parseFloat(displayValue || 0); localStorage.setItem('calc_memory', memory); alert('M+ saved'); return; }
+    if (action === 'Mminus') { memory -= parseFloat(displayValue || 0); localStorage.setItem('calc_memory', memory); alert('M- saved'); return; }
+    if (action === 'MR') { displayValue = memory.toString(); updateScreen(); return; }
+    if (action === 'MC') { memory = 0; localStorage.setItem('calc_memory', memory); alert('Memory cleared'); return; }
+  });
+});
+
+document.getElementById('clearHistory').addEventListener('click', () => {
+  if (!confirm('Clear history?')) return;
+  APP_STATE.history = []; localStorage.removeItem('calc_history'); loadHistoryUI();
+});
+
+document.getElementById('pasteAns').addEventListener('click', () => {
+  displayValue = (APP_STATE.lastAns || 0).toString(); updateScreen();
+});
+
+document.getElementById('copyHistory').addEventListener('click', () => {
+  const text = APP_STATE.history.map(h => `${h.expr} = ${h.result}`).join('\n');
+  navigator.clipboard?.writeText(text).then(()=>alert('History copied'));
+});
+
+/* Functions mapping */
+function applyFunction(name) {
+  try {
+    const x = parseFloat(displayValue);
+    let res;
+    if (name === 'sqrt') { res = Math.sqrt(x); }
+    else if (name === 'percent') { res = x / 100; }
+    else if (name === 'pow') { displayValue += '^'; updateScreen(); return; } // handled in evaluator
+    else if (name === 'factorial') { res = factorial(x); }
+    else if (name === 'recip') { res = 1 / x; }
+    else if (name === 'sin') { res = trig('sin', x); }
+    else if (name === 'cos') { res = trig('cos', x); }
+    else if (name === 'tan') { res = trig('tan', x); }
+    else if (name === 'log') { res = Math.log10(x); }
+    else if (name === 'ln') { res = Math.log(x); }
+    if (res !== undefined) {
+      displayValue = formatResult(res);
+      pushToHistory(`${name}(${x})`, displayValue);
+      updateScreen();
+    }
+  } catch (err) {
+    displayValue = 'Error'; updateScreen();
+  }
+}
+
+function factorial(n) {
+  n = Math.floor(n);
+  if (n < 0) return NaN;
+  if (n === 0) return 1;
+  let f = 1;
+  for (let i = 1; i <= n; i++) f *= i;
+  return f;
+}
+function trig(fn, v) {
+  const rad = degMode ? (v * Math.PI / 180) : v;
+  if (fn === 'sin') return Math.sin(rad);
+  if (fn === 'cos') return Math.cos(rad);
+  if (fn === 'tan') return Math.tan(rad);
+}
+
+/* Evaluate expression safely with limited replacements */
+function evaluateExpression() {
+  let expr = displayValue;
+  // sanitize and replace common tokens
+  expr = expr.replace(/×/g, '*').replace(/÷/g, '/').replace(/–/g, '-');
+  expr = expr.replace(/(\d+)%/g, '($1/100)'); // percent like 5% -> (5/100)
+  // replace ^ with Math.pow
+  expr = expr.replace(/(\d+(\.\d+)?|\))\s*\^\s*(\d+(\.\d+)?|\()/g, (m) => m.replace('^', '**'));
+  // replace sqrt, sin, cos, tan, log, ln if used as functions in string (not required here)
+  // allow Math functions by mapping to Math.X
+  expr = expr.replace(/\bsqrt\(/g, 'Math.sqrt(');
+  expr = expr.replace(/\bln\(/g, 'Math.log(');
+  expr = expr.replace(/\blog\(/g, 'Math.log10(');
+  // replace sin/cos/tan as sin(x) -> appropriate conversion
+  expr = expr.replace(/\bsin\(([^)]+)\)/g, (_, v) => `(${degMode ? `Math.sin((${v})*Math.PI/180)` : `Math.sin(${v})`})`);
+  expr = expr.replace(/\bcos\(([^)]+)\)/g, (_, v) => `(${degMode ? `Math.cos((${v})*Math.PI/180)` : `Math.cos(${v})`})`);
+  expr = expr.replace(/\btan\(([^)]+)\)/g, (_, v) => `(${degMode ? `Math.tan((${v})*Math.PI/180)` : `Math.tan(${v})`})`);
+
+  // prevent dangerous tokens (no letters except Math, parentheses, digits, operators, decimals)
+  if (/[^0-9+\-*/().,%\sMathpowe^]/.test(expr)) {
+    // still allow ** operator from earlier step
+  }
+
+  try {
+    // Use Function to evaluate — limited but powerful; this runs client-side only.
+    // Convert exponentiation ** if present
+    const safeExpr = expr.replace(/\^/g, '**');
+    const result = Function(`"use strict"; return (${safeExpr});`)();
+    displayValue = (result === undefined || result === null) ? '0' : formatResult(result);
+    pushToHistory(expr, displayValue);
+  } catch (err) {
+    displayValue = 'Error';
+  }
+  updateScreen();
+}
+
+function formatResult(value) {
+  if (Number.isFinite(value)) {
+    // trim long decimals
+    const s = value.toString();
+    if (s.indexOf('e') !== -1) return value.toPrecision(10);
+    if (Math.abs(value) >= 1e12 || Math.abs(value) < 1e-9) return value.toPrecision(10);
+    return parseFloat(value.toFixed(12)).toString();
+  }
+  return value;
+}
+
+/* -------------------------
+   Converter setup
+   ------------------------- */
+const convCategory = document.getElementById('convCategory');
+const convFrom = document.getElementById('convFrom');
+const convTo = document.getElementById('convTo');
+const convValue = document.getElementById('convValue');
+
+function populateConverters() {
+  updateConvOptions();
+  convCategory.addEventListener('change', updateConvOptions);
+}
+
+function updateConvOptions() {
+  const cat = convCategory.value;
+  convFrom.innerHTML = '';
+  convTo.innerHTML = '';
+  let opts = [];
+  switch (cat) {
+    case 'length':
+      opts = ['m','km','cm','mm','in','ft','yd','mi'];
+      break;
+    case 'weight':
+      opts = ['kg','g','mg','lb','oz'];
+      break;
+    case 'temperature':
+      opts = ['C','F','K'];
+      break;
+    case 'volume':
+      opts = ['L','mL','m3','ft3','gal'];
+      break;
+    case 'currency':
+      opts = ['USD','EUR','GBP','LKR'];
+      break;
+  }
+  opts.forEach(o => {
+    convFrom.innerHTML += `<option value="${o}">${o}</option>`;
+    convTo.innerHTML += `<option value="${o}">${o}</option>`;
+  });
+}
+
+/* Conversion functions */
+function convertUnit(cat, value, from, to) {
+  if (cat === 'length') {
+    const m = {m:1, km:1000, cm:0.01, mm:0.001, in:0.0254, ft:0.3048, yd:0.9144, mi:1609.344};
+    return value * m[from] / m[to];
+  }
+  if (cat === 'weight') {
+    const kg = {kg:1, g:0.001, mg:0.000001, lb:0.45359237, oz:0.0283495231};
+    return value * kg[from] / kg[to];
+  }
+  if (cat === 'temperature') {
+    if (from === to) return value;
+    if (from === 'C' && to === 'F') return (value * 9/5) + 32;
+    if (from === 'C' && to === 'K') return value + 273.15;
+    if (from === 'F' && to === 'C') return (value - 32) * 5/9;
+    if (from === 'F' && to === 'K') return (value - 32) * 5/9 + 273.15;
+    if (from === 'K' && to === 'C') return value - 273.15;
+    if (from === 'K' && to === 'F') return (value - 273.15) * 9/5 + 32;
+  }
+  if (cat === 'volume') {
+    const L = {L:1, mL:0.001, m3:1000, ft3:28.3168, gal:3.78541};
+    return value * L[from] / L[to];
+  }
+  return NaN;
+}
+
+/* Currency: use exchangerate.host; cache last rates in localStorage */
+async function fetchRates(base='USD') {
+  try {
+    const resp = await fetch(`https://api.exchangerate.host/latest?base=${base}`);
+    if (!resp.ok) throw new Error('Network');
+    const data = await resp.json();
+    // save to cache
+    localStorage.setItem('cached_rates', JSON.stringify({ts:Date.now(), base: data.base, rates: data.rates}));
+    return data.rates;
+  } catch (err) {
+    // fallback to cached
+    const cached = JSON.parse(localStorage.getItem('cached_rates') || 'null');
+    if (cached) return cached.rates;
+    return null;
+  }
+}
+
+document.getElementById('convGo').addEventListener('click', async () => {
+  const val = parseFloat(convValue.value);
+  if (isNaN(val)) { document.getElementById('convResult').textContent = 'Enter a numeric value'; return; }
+  const cat = convCategory.value;
+  const from = convFrom.value; const to = convTo.value;
+  if (cat === 'currency') {
+    if (!navigator.onLine) {
+      document.getElementById('convResult').textContent = 'Offline: cannot fetch live currency rates.';
+      return;
+    }
+    const rates = await fetchRates(from);
+    if (!rates || !rates[to]) {
+      document.getElementById('convResult').textContent = 'Currency rates not available.';
+      return;
+    }
+    const res = val * rates[to];
+    document.getElementById('convResult').textContent = res.toFixed(4) + ' ' + to;
+  } else {
+    const res = convertUnit(cat, val, from, to);
+    document.getElementById('convResult').textContent = (isNaN(res) ? 'N/A' : (Math.round(res*1e8)/1e8) + ' ' + to);
+  }
+});
+
+/* -------------------------
+   service worker embedded registration
+   ------------------------- */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    const swCode = `
+      const CACHE_NAME = 'mn-calculator-pro-cache-v1';
+      const urlsToCache = ['/', '/index.html'];
+      self.addEventListener('install', event => {
+        event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache)));
+      });
+      self.addEventListener('activate', event => {
+        // cleanup old caches if needed
+      });
+      self.addEventListener('fetch', event => {
+        const req = event.request;
+        // do not cache requests to exchangerate.host (always network)
+        if (req.url.includes('exchangerate.host')) {
+          return event.respondWith(fetch(req).catch(()=>caches.match('/index.html')));
+        }
+        event.respondWith(caches.match(req).then(resp => resp || fetch(req).then(r => {
+          // optionally cache new GET responses
+          return r;
+        })).catch(()=>caches.match('/index.html')));
+      });
+    `;
+    const blob = new Blob([swCode], { type: 'application/javascript' });
+    navigator.serviceWorker.register(URL.createObjectURL(blob)).then(() => {
+      console.log('Service worker registered (embedded).');
+    }).catch(err => console.warn('SW register failed:', err));
+  });
+}
+
+/* ---------- initialization: show app if allowed ---------- */
+function init() {
+  // show/hide UI depending on install-only
+  const appRoot = document.getElementById('appRoot');
+  const allowBrowser = (APP_STATE.installOnly === false);
+  if (!isRunningAsPWA() && !allowBrowser) {
+    // keep overlay shown
+    document.getElementById('appRoot').style.visibility = 'hidden';
+  } else {
+    document.getElementById('installOverlay').style.display = 'none';
+    document.getElementById('appRoot').style.visibility = 'visible';
+    document.getElementById('appRoot').removeAttribute('aria-hidden');
+  }
+  // populate UI defaults
+  updateScreen();
+  // set default conv options
+  populateConverters();
+}
+init();
+
+/* keyboard input */
+window.addEventListener('keydown', (e) => {
+  if (!document.getElementById('appRoot').style.visibility || document.getElementById('appRoot').style.visibility === 'visible') {
+    const key = e.key;
+    if ((/^[0-9]$/).test(key) || key === '.') {
+      if (displayValue === '0') displayValue = key; else displayValue += key;
+    } else if (key === '+' || key === '-' || key === '*' || key === '/') {
+      displayValue += key;
+    } else if (key === 'Enter') { evaluateExpression(); }
+    else if (key === 'Backspace') { displayValue = displayValue.slice(0, -1) || '0'; }
+    updateScreen();
+  }
+});
+</script>
+</body>
+</html>

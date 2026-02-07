@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App Center | MN ZONEX 2.0</title>
+
+<!-- CSS -->
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/layout.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/animations.css">
+<link rel="stylesheet" href="assets/css/responsive.css">
+
+<style>
+body{
+  margin:0;
+  font-family:"Segoe UI",sans-serif;
+  background:#0e0e0e;
+  color:#fff;
+}
+.hero{
+  text-align:center;
+  padding:60px 20px;
+  background:radial-gradient(circle,#1a1a1a,#000);
+  color:#fff;
+}
+.hero h2{ font-size:36px; }
+
+.navbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:20px 40px;
+  background:#111;
+  border-bottom:1px solid #222;
+}
+.navbar h1{
+  font-size:28px;
+  margin:0;
+}
+.navbar h1 span{
+  color:#00e5ff;
+  font-size:28px;
+}
+.navbar nav a{
+  color:#bbb;
+  margin-left:20px;
+  text-decoration:none;
+  font-size:15px;
+}
+.navbar nav a:hover{
+  color:#00e5ff;
+}
+
+.apps-container{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:25px;
+  padding:50px 20px;
+  max-width:1200px;
+  margin:auto;
+}
+.app-card{
+  background:#141414;
+  border-radius:14px;
+  overflow:hidden;
+  text-align:center;
+  box-shadow:0 0 15px #00e5ff22;
+  transition:0.3s;
+  display:flex;
+  flex-direction:column;
+}
+.app-card:hover{
+  transform:translateY(-6px);
+  box-shadow:0 0 30px #00e5ff55;
+}
+.app-card img{
+  width:100%;
+  height:140px;
+  object-fit:cover;
+}
+.app-info{
+  padding:15px;
+}
+.app-info h4{
+  margin:5px 0;
+  color:#00e5ff;
+  font-size:18px;
+}
+.app-info p{
+  font-size:13px;
+  color:#bbb;
+  min-height:40px;
+}
+.app-btn{
+  display:inline-block;
+  margin-top:10px;
+  padding:10px 26px;
+  background:#00e5ff;
+  color:#000;
+  font-weight:bold;
+  border-radius:30px;
+  text-decoration:none;
+  transition:0.3s;
+  cursor:pointer;
+}
+.app-btn:hover{
+  box-shadow:0 0 20px #00e5ff;
+  transform:scale(1.05);
+}
+
+footer{
+  text-align:center;
+  padding:20px;
+  color:#777;
+}
+
+#iosModal{
+  display:none;
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:rgba(0,0,0,0.85);
+  color:#fff;
+  z-index:1000;
+  text-align:center;
+  padding-top:100px;
+  font-size:18px;
+}
+#iosModal p{max-width:300px; margin:auto;}
+#iosModal button{
+  margin-top:20px;
+  padding:10px 20px;
+  font-size:16px;
+  border:none;
+  border-radius:10px;
+  background:#00e5ff;
+  color:#000;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<header class="navbar">
+  <h1>MN ZONEX <span>2.0</span></h1>
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="games.html">Games</a>
+    <a href="services.html">Services</a>
+    <a href="appcenter.html">App Center</a>
+    <a href="feedback.html">Feedback</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <h2>App Center</h2>
+  <p>Explore our top Progressive Web Apps (PWA)</p>
+</section>
+
+<section class="apps-container" id="apps"></section>
+
+<footer>© 2026 MN ZONEX. All rights reserved.</footer>
+
+<!-- iOS Instructions Modal -->
+<div id="iosModal">
+  <p>To install this app on iOS, tap the Share icon and select <b>"Add to Home Screen"</b>.</p>
+  <button onclick="document.getElementById('iosModal').style.display='none'">Close</button>
+</div>
+
+<script>
+// App Data with individual PWA paths
+const apps = [
+  {name:"Calculator", desc:"Song videos on WhatsApp.", img:"assets/images/apps/app1.jpg", downloadPath:"/apps/app1/index.html"},
+  {name:"Diary", desc:"Custom logos for your brand.", img:"assets/images/apps/app2.jpg", downloadPath:"/apps/app2/index.html"},
+  {name:"Finance Tracker", desc:"Past papers & educational resources.", img:"assets/images/apps/app3.jpg", downloadPath:"/apps/app3/index.html"},
+  {name:"Coming Soon...", desc:"Coming Soon...", img:"assets/images/apps/app4.jpg", downloadPath:"/apps/app4/index.html"},
+  {name:"Coming Soon...", desc:"Coming Soon...", img:"assets/images/apps/app5.jpg", downloadPath:"/apps/app5/index.html"},
+  {name:"Coming Soon...", desc:"Coming Soon...", img:"assets/images/apps/app6.jpg", downloadPath:"/apps/app6/index.html"},
+  {name:"Coming Soon...", desc:"Coming Soon...", img:"assets/images/apps/app7.jpg", downloadPath:"/apps/app7index.html"},
+  {name:"Coming Soon...", desc:"Coming Soon...", img:"assets/images/apps/app8.jpg", downloadPath:"/apps/app8/index.html"},
+  {name:"Coming Soon...", desc:"Coming Soon...", img:"assets/images/apps/app9.jpg", downloadPath:"/apps/app9/index.html"},
+  {name:"Coming Soon...", desc:"Coming Soon...", img:"assets/images/apps/app10.jpg", downloadPath:"/apps/app10/index.html"}
+];
+
+const container = document.getElementById("apps");
+
+// Generate app cards
+apps.forEach(a=>{
+  container.innerHTML += `
+    <div class="app-card fade-in" style="animation-delay:0s;">
+      <img src="${a.img}" alt="${a.name}">
+      <div class="app-info">
+        <h4>${a.name}</h4>
+        <p>${a.desc}</p>
+        <button class="app-btn">Install / Open</button>
+      </div>
+    </div>
+  `;
+});
+
+// PWA Install Setup
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredPrompt = e;
+  console.log("PWA can be installed!");
+});
+
+// Button click handling
+document.querySelectorAll(".app-btn").forEach((btn,index)=>{
+  btn.addEventListener('click', async ()=>{
+    const appDownloadPath = apps[index].downloadPath;
+
+    // Android / Desktop install prompt
+    if(deferredPrompt){
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      console.log("User choice:", choice.outcome);
+      deferredPrompt = null;
+    }
+    // iOS fallback
+    else if(/iPad|iPhone|iPod/.test(navigator.userAgent)){
+      document.getElementById('iosModal').style.display='block';
+    }
+    // Fallback: open specific PWA page
+    else{
+      window.location.href = appDownloadPath;
+    }
+  });
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,962 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>My Diary - Diary with lock (MN ZONEX)</title>
+
+<!-- Manifest (embedded with icons path pointing to /assets/icons/) -->
+<link rel="manifest" href="data:application/manifest+json,
+{
+  'name':'My Diary - Diary with lock',
+  'short_name':'My Diary',
+  'start_url':'/index.html',
+  'display':'standalone',
+  'background_color':'#ffffff',
+  'theme_color':'#00e5ff',
+  'icons':[ 
+    {'src':'/assets/icons/diary-192.png','sizes':'192x192','type':'image/png'},
+    {'src':'/assets/icons/diary-512.png','sizes':'512x512','type':'image/png'}
+  ]
+}">
+
+<meta name="theme-color" content="#00e5ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/assets/icons/diary-192.png">
+
+<style>
+/* ---------- Styling (modern, responsive) ---------- */
+:root{
+  --bg: #0f1720;
+  --card: #0b1320;
+  --muted: #9aa7b2;
+  --accent: #00e5ff;
+  --accent-contrast: #001218;
+  --glass: rgba(255,255,255,0.02);
+  --radius: 14px;
+  --shadow: 0 12px 40px rgba(0,0,0,0.6);
+  --font-main: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
+}
+body.light{
+  --bg: #f2f6fb;
+  --card: #ffffff;
+  --muted: #55606a;
+  --accent: #0066cc;
+  --accent-contrast: #fff;
+  --glass: rgba(0,0,0,0.02);
+  --shadow: 0 12px 40px rgba(0,0,0,0.08);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:var(--font-main);
+  background:linear-gradient(180deg,var(--bg), #05060a 80%);
+  color:var(--accent-contrast);
+  display:flex;
+  justify-content:center;
+  padding:22px;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+/* top-level app container */
+.app {
+  width:100%;
+  max-width:1100px;
+  display:grid;
+  grid-template-columns: 360px 1fr;
+  gap:24px;
+  align-items:start;
+}
+
+/* Left column: control & entry list */
+.side {
+  background:var(--card);
+  border-radius:var(--radius);
+  padding:14px;
+  box-shadow:var(--shadow);
+  min-height:520px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+/* Right column: editor / calendar / details */
+.main {
+  background:var(--card);
+  border-radius:var(--radius);
+  padding:16px;
+  box-shadow:var(--shadow);
+  min-height:520px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+/* header */
+.header { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+.brand { display:flex; align-items:center; gap:10px; }
+.logo {
+  width:46px; height:46px; border-radius:10px;
+  background:var(--accent); color:var(--accent-contrast);
+  display:flex; align-items:center; justify-content:center; font-weight:800;
+  box-shadow:0 8px 24px rgba(0,0,0,0.35);
+}
+.app-title { font-size:16px; font-weight:700; }
+.app-sub { font-size:12px; color:var(--muted); }
+
+/* controls */
+.control-row { display:flex; gap:8px; align-items:center; }
+.btn {
+  padding:8px 12px; border-radius:10px; border:none; cursor:pointer;
+  background:var(--glass); color:var(--accent-contrast); font-weight:600;
+}
+.btn.primary { background:var(--accent); color:var(--accent-contrast); box-shadow:0 6px 16px rgba(0,0,0,0.25); }
+.btn.ghost { background:transparent; border:1px solid rgba(255,255,255,0.03); color:var(--muted); }
+
+/* entry list */
+.search { display:flex; gap:8px; margin-top:6px; }
+.search input { flex:1; padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.03); background:transparent; color:var(--accent-contrast); }
+
+.entries { margin-top:8px; display:flex; flex-direction:column; gap:10px; overflow:auto; max-height:380px; padding-right:4px; }
+.entry-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+  border-radius:10px; padding:10px; display:flex; gap:10px; align-items:flex-start;
+  cursor:pointer; transition:transform .12s, box-shadow .12s;
+}
+.entry-card:hover { transform:translateY(-4px); box-shadow: 0 10px 30px rgba(0,0,0,0.45); }
+.entry-meta { font-size:12px; color:var(--muted); }
+.entry-title { font-weight:700; color:var(--accent-contrast); }
+
+/* editor */
+.editor { display:flex; flex-direction:column; gap:10px; }
+.input, textarea, select { width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.03); background:transparent; color:var(--accent-contrast); }
+textarea { min-height:160px; resize:vertical; }
+.small { font-size:13px; color:var(--muted); }
+.moods { display:flex; gap:8px; flex-wrap:wrap; }
+.mood-btn { padding:8px 10px; border-radius:8px; border:none; cursor:pointer; background:var(--glass); color:var(--accent-contrast); }
+
+/* canvas */
+.canvas-wrap { background:rgba(0,0,0,0.02); border-radius:10px; padding:6px; }
+#drawCanvas { width:100%; height:200px; border-radius:8px; background:white; touch-action:none; }
+
+/* gallery preview */
+.gallery { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+.thumb { width:86px; height:86px; border-radius:8px; object-fit:cover; border:1px solid rgba(255,255,255,0.03); }
+
+/* calendar */
+.calendar { display:grid; grid-template-columns:repeat(7, 1fr); gap:6px; }
+.cal-day { padding:10px; border-radius:8px; text-align:center; font-size:13px; background:transparent; cursor:pointer; border:1px dashed rgba(255,255,255,0.02); }
+.cal-day.has-entry { box-shadow: inset 0 -4px 0 var(--accent); }
+
+/* footer */
+.footer { text-align:center; color:var(--muted); font-size:13px; margin-top:8px; }
+
+/* responsive */
+@media (max-width:980px) {
+  .app { grid-template-columns: 1fr; }
+  .side { order:2; }
+  .main { order:1; }
+}
+</style>
+</head>
+<body>
+
+<!-- INSTALL ONLY OVERLAY -->
+<div id="installOverlay" style="position:fixed; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.7), rgba(0,0,0,0.85)); display:flex; align-items:center; justify-content:center; z-index:9999; color:white; text-align:center; padding:20px;">
+  <div style="max-width:620px; background:rgba(0,0,0,0.45); padding:22px; border-radius:12px;">
+    <h2 style="margin:6px 0;">Install required to use "My Diary"</h2>
+    <p style="color:#ddd;">This app is install-only by default. Install the app to use it offline and store your private diary securely on this device.</p>
+    <p style="color:#bbb; font-size:13px;">On Android/Chrome: open menu → Install app / Add to Home Screen. On iOS: share → Add to Home Screen.</p>
+    <div style="margin-top:16px; display:flex; gap:10px; justify-content:center;">
+      <button id="overlayClose" style="padding:10px 14px; border-radius:8px; border:none; background:#333; color:white; cursor:pointer;">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="appRoot" aria-hidden="true" style="visibility:hidden;">
+  <!-- LEFT: side column -->
+  <div class="side">
+    <div class="header">
+      <div class="brand">
+        <div class="logo">MD</div>
+        <div>
+          <div class="app-title">My Diary</div>
+          <div class="app-sub">Private • Install-only • Offline</div>
+        </div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button id="btnNew" class="btn primary">New</button>
+        <button id="btnSettings" class="btn">Settings</button>
+      </div>
+    </div>
+
+    <div class="search">
+      <input id="searchInput" placeholder="Search entries, tags, text..." />
+      <select id="filterMood" style="padding:8px; border-radius:8px; border:1px solid rgba(255,255,255,0.03); background:transparent; color:var(--accent-contrast);">
+        <option value="">All moods</option>
+        <option value="😊">Happy</option><option value="😢">Sad</option><option value="😍">Love</option><option value="😡">Angry</option><option value="😎">Cool</option>
+      </select>
+    </div>
+
+    <div style="display:flex; gap:8px; align-items:center;">
+      <button id="btnExport" class="btn">Export</button>
+      <button id="btnImport" class="btn">Import</button>
+      <button id="btnSync" class="btn">Sync Drive</button>
+    </div>
+
+    <div class="entries" id="entriesList" aria-live="polite">
+      <!-- entry cards filled here -->
+    </div>
+
+    <div style="display:flex; gap:8px; margin-top:8px;">
+      <button id="btnCalendar" class="btn">Calendar</button>
+      <button id="btnMoodStats" class="btn">Mood Tracker</button>
+      <div style="flex:1"></div>
+      <button id="btnLockChange" class="btn">Change Password</button>
+    </div>
+  </div>
+
+  <!-- RIGHT: main editor / calendar / viewer -->
+  <div class="main">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div style="display:flex; gap:8px; align-items:center;">
+        <div id="pageTitle" style="font-weight:700; font-size:16px;">New Entry</div>
+        <div class="small" id="entryDatePreview"></div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button id="btnSave" class="btn primary">Save</button>
+        <button id="btnDelete" class="btn ghost">Delete</button>
+      </div>
+    </div>
+
+    <div class="editor" id="editorPanel">
+      <input id="titleInput" class="input" placeholder="Title (optional)" />
+      <textarea id="textInput" placeholder="Write your memory..."></textarea>
+
+      <div style="display:flex; gap:8px; align-items:center;">
+        <select id="fontSelect" style="padding:8px; border-radius:8px;">
+          <option value="Segoe UI">Segoe UI</option><option value="Arial">Arial</option>
+          <option value="Georgia">Georgia</option><option value="Courier New">Courier New</option>
+          <option value="Tahoma">Tahoma</option><option value="Verdana">Verdana</option>
+          <option value="Impact">Impact</option><option value="Comic Sans MS">Comic Sans MS</option>
+        </select>
+        <select id="fontSize" style="padding:8px; border-radius:8px;">
+          <option value="14">14px</option><option value="16" selected>16px</option><option value="18">18px</option><option value="20">20px</option>
+        </select>
+        <input id="textColor" type="color" value="#000000" title="Text color" style="width:44px; height:36px; padding:0; border-radius:6px;" />
+        <select id="emojiPicker" style="padding:8px; border-radius:8px;">
+          <option value="">Add emoji</option>
+          <option value="😊">😊 Happy</option><option value="😢">😢 Sad</option><option value="😍">😍 Love</option><option value="😡">😡 Angry</option><option value="😎">😎 Cool</option>
+          <option value="🎉">🎉 Party</option><option value="💖">💖 Heart</option><option value="🌞">🌞 Sun</option><option value="🌙">🌙 Moon</option>
+          <option value="🔥">🔥 Fire</option><option value="✨">✨ Sparkle</option><option value="🎵">🎵 Music</option>
+        </select>
+      </div>
+
+      <div style="display:flex; gap:8px; align-items:center; margin-top:6px;">
+        <label class="small">Mood</label>
+        <select id="moodSelect" style="padding:8px; border-radius:8px;">
+          <option value="😊">😊 Happy</option><option value="😢">😢 Sad</option><option value="😍">😍 Love</option><option value="😡">😡 Angry</option><option value="😎">😎 Cool</option>
+          <option value="🤔">🤔 Thinking</option><option value="😭">😭 Crying</option><option value="🤩">🤩 Excited</option>
+        </select>
+
+        <input id="tagsInput" placeholder="Tags (comma separated)" style="padding:8px; border-radius:8px; flex:1;" />
+      </div>
+
+      <div class="canvas-wrap">
+        <label class="small">Draw (touch / mouse)</label>
+        <canvas id="drawCanvas"></canvas>
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <button id="clearCanvas" class="btn">Clear</button>
+          <button id="saveCanvas" class="btn">Save Drawing</button>
+        </div>
+      </div>
+
+      <div style="margin-top:8px;">
+        <label class="small">Add photos from gallery</label>
+        <input id="filePicker" type="file" accept="image/*" multiple />
+        <div class="gallery" id="galleryPreview"></div>
+      </div>
+
+      <div style="display:flex; gap:8px; margin-top:8px; align-items:center;">
+        <button id="btnSave2" class="btn primary">Save Entry</button>
+        <button id="btnClearForm" class="btn ghost">Clear</button>
+      </div>
+    </div>
+
+    <!-- calendar / mood tracker / import-export modals are toggled here -->
+    <div id="auxPanel" style="margin-top:10px;"></div>
+  </div>
+</div>
+
+<div style="max-width:1100px; width:100%; margin-top:12px; text-align:center;">
+  <div class="footer">© 2026 MN ZONEX. All rights reserved. — Donation Binance ID: 766308505</div>
+</div>
+
+<script>
+/* ============================
+   Advanced Diary PWA Script
+   ============================ */
+
+/* --------- Configuration --------- */
+const ICON_192 = '/assets/icons/diary-192.png';
+const ICON_512 = '/assets/icons/diary-512.png';
+
+// Optional: Google Drive sync client id - put your OAuth client id here if you want Drive sync
+const GOOGLE_CLIENT_ID = ''; // <-- REPLACE with your Google OAuth Client ID to enable Drive sync
+
+/* --------- Storage helpers --------- */
+// We'll store entries in localStorage under 'diary_entries' (array).
+// Each entry: { id, title, text, mood, tags:[], fonts, fontSize, textColor, drawings: [dataURL], images: [dataURL], createdAt, updatedAt }
+
+function uid(prefix='id') {
+  return prefix + '-' + Date.now() + '-' + Math.floor(Math.random()*99999);
+}
+
+function readEntries() {
+  try { return JSON.parse(localStorage.getItem('diary_entries') || '[]'); }
+  catch(e) { return []; }
+}
+function saveEntries(entries) {
+  localStorage.setItem('diary_entries', JSON.stringify(entries));
+}
+
+/* --------- Install-only enforcement --------- */
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; });
+
+function isPWAInstalled() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+const SETTINGS_KEY = 'diary_settings';
+let SETTINGS = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+// default settings
+if (SETTINGS.theme === undefined) SETTINGS.theme = 'dark';
+if (SETTINGS.installOnly === undefined) SETTINGS.installOnly = true;
+
+// controls
+const installOverlay = document.getElementById('installOverlay');
+const appRoot = document.getElementById('appRoot');
+
+function enforceInstallOnly() {
+  const allowBrowser = SETTINGS.installOnly === false;
+  if (!isPWAInstalled() && !allowBrowser) {
+    installOverlay.style.display = 'flex';
+    appRoot.style.visibility = 'hidden';
+    appRoot.setAttribute('aria-hidden', 'true');
+  } else {
+    installOverlay.style.display = 'none';
+    appRoot.style.visibility = 'visible';
+    appRoot.removeAttribute('aria-hidden');
+  }
+}
+document.getElementById('overlayClose').addEventListener('click', () => {
+  installOverlay.style.display = 'none';
+});
+// try on load
+window.addEventListener('load', () => {
+  applyTheme();
+  enforceInstallOnly();
+  loadEntriesList();
+  initCanvas();
+  populateEditorDefaults();
+});
+
+/* Install prompt button (if available) */
+document.getElementById('btnSync').addEventListener('click', async () => {
+  // We'll use this for sync UI; if no Client ID, show message
+  if (!GOOGLE_CLIENT_ID) {
+    alert('Google Drive sync not configured. To enable, set GOOGLE_CLIENT_ID in the code and create OAuth credentials in Google Cloud Console.');
+    return;
+  }
+  // Otherwise call driveSync() (below)
+  driveSyncUploadAll();
+});
+
+/* --------- Password / Lock (SHA-256 hash) --------- */
+const PASSWORD_KEY = 'diary_password_hash';
+
+async function sha256hex(str) {
+  const enc = new TextEncoder();
+  const data = enc.encode(str);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function initLock() {
+  const stored = localStorage.getItem(PASSWORD_KEY);
+  if (!stored) {
+    // first-time: set password prompt
+    await promptSetPassword();
+  } else {
+    await promptEnterPassword();
+  }
+}
+
+async function promptSetPassword() {
+  while (true) {
+    const p = prompt('Set a password for your diary (min 4 chars). This will be stored securely (hashed).');
+    if (p === null) { /* user cancelled -> block app */ alert('Password required to use diary.'); continue; }
+    if (p.length < 4) { alert('Password must be at least 4 characters'); continue; }
+    const hash = await sha256hex(p);
+    localStorage.setItem(PASSWORD_KEY, hash);
+    alert('Password set. You will use this to unlock the diary.');
+    break;
+  }
+}
+
+async function promptEnterPassword() {
+  const stored = localStorage.getItem(PASSWORD_KEY);
+  for (let i=0;i<6;i++){
+    const p = prompt('Enter diary password to unlock:');
+    if (p === null) { alert('Password required to use diary.'); }
+    else {
+      const hash = await sha256hex(p);
+      if (hash === stored) {
+        // unlocked
+        return;
+      } else {
+        alert('Incorrect password.');
+      }
+    }
+  }
+  alert('Too many attempts. Reload to try again.');
+}
+
+// At load, enforce password before showing UI
+(async () => {
+  // If install-only is enabled, show overlay before prompting
+  // We'll still require password when visible
+  // Wait a tick so UI elements exist
+  await new Promise(r => setTimeout(r, 300));
+  try {
+    if (SETTINGS.requirePassword === undefined) SETTINGS.requirePassword = true;
+    if (SETTINGS.requirePassword) {
+      // If app is install-only and not installed, don't prompt until user installs or allows
+      if (SETTINGS.installOnly && !isPWAInstalled()) {
+        // skip password for now; enforce when app becomes visible
+      } else {
+        await initLock();
+      }
+    }
+  } catch(e) {
+    console.warn('Lock init error', e);
+  }
+})();
+
+/* If app becomes visible (installed or installOnly false), then prompt password if needed */
+const visibilityObserver = new MutationObserver(() => {
+  if (getComputedStyle(appRoot).visibility !== 'hidden') {
+    if (SETTINGS.requirePassword) {
+      // prompt lock
+      initLock().catch(()=>{});
+    }
+    visibilityObserver.disconnect();
+  }
+});
+visibilityObserver.observe(appRoot, { attributes: true, attributeFilter: ['style'] });
+
+/* --------- Entries list UI --------- */
+const entriesListEl = document.getElementById('entriesList');
+const searchInput = document.getElementById('searchInput');
+const filterMood = document.getElementById('filterMood');
+
+searchInput.addEventListener('input', () => loadEntriesList());
+filterMood.addEventListener('change', () => loadEntriesList());
+
+function loadEntriesList() {
+  const all = readEntries().sort((a,b)=> new Date(b.createdAt) - new Date(a.createdAt));
+  const q = (searchInput.value || '').toLowerCase();
+  const moodFilter = filterMood.value || '';
+  entriesListEl.innerHTML = '';
+  all.filter(entry => {
+    if (moodFilter && entry.mood !== moodFilter) return false;
+    if (!q) return true;
+    return (entry.title && entry.title.toLowerCase().includes(q)) || (entry.text && entry.text.toLowerCase().includes(q)) || (entry.tags && entry.tags.join(' ').toLowerCase().includes(q));
+  }).forEach(entry => {
+    const card = document.createElement('div');
+    card.className = 'entry-card';
+    card.dataset.id = entry.id;
+    card.innerHTML = `
+      <div style="flex:1">
+        <div class="entry-title">${entry.title ? escapeHtml(entry.title) : (entry.text ? escapeHtml(entry.text.slice(0,60)) : 'Untitled')}</div>
+        <div class="entry-meta">${new Date(entry.createdAt).toLocaleString()} • ${entry.mood || ''} ${entry.tags ? ' • ' + entry.tags.join(', ') : ''}</div>
+      </div>
+      <div style="width:48px; text-align:right;">
+        ${entry.images && entry.images.length ? `<img src="${entry.images[0]}" style="width:44px;height:44px;border-radius:6px;object-fit:cover;"/>` : ''}
+      </div>
+    `;
+    card.addEventListener('click', () => openEntry(entry.id));
+    entriesListEl.appendChild(card);
+  });
+}
+
+/* --------- Editor / Save / Delete --------- */
+const titleInput = document.getElementById('titleInput');
+const textInput = document.getElementById('textInput');
+const fontSelect = document.getElementById('fontSelect');
+const fontSize = document.getElementById('fontSize');
+const textColor = document.getElementById('textColor');
+const emojiPicker = document.getElementById('emojiPicker');
+const moodSelect = document.getElementById('moodSelect');
+const tagsInput = document.getElementById('tagsInput');
+const filePicker = document.getElementById('filePicker');
+const galleryPreview = document.getElementById('galleryPreview');
+
+let currentEditingId = null;
+let currentImages = []; // dataURLs
+let currentDrawings = []; // dataURLs
+
+document.getElementById('btnNew').addEventListener('click', () => {
+  clearEditor();
+  showEditorPanel();
+  currentEditingId = null;
+  updatePageTitle('New Entry');
+});
+
+document.getElementById('btnSave2').addEventListener('click', saveEntry);
+document.getElementById('btnSave').addEventListener('click', saveEntry);
+
+document.getElementById('btnDelete').addEventListener('click', () => {
+  if (!currentEditingId) { alert('No entry selected to delete.'); return; }
+  if (!confirm('Delete this entry?')) return;
+  let entries = readEntries();
+  entries = entries.filter(e => e.id !== currentEditingId);
+  saveEntries(entries);
+  currentEditingId = null;
+  clearEditor();
+  loadEntriesList();
+  alert('Entry deleted');
+});
+
+document.getElementById('btnClearForm').addEventListener('click', clearEditor);
+
+filePicker.addEventListener('change', (ev) => {
+  const files = Array.from(ev.target.files || []);
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const dataUrl = e.target.result;
+      currentImages.push(dataUrl);
+      renderGallery();
+    };
+    reader.readAsDataURL(file);
+  });
+  // reset input
+  filePicker.value = '';
+});
+
+emojiPicker.addEventListener('change', () => {
+  if (emojiPicker.value) {
+    textInput.value += ' ' + emojiPicker.value;
+    emojiPicker.value = '';
+  }
+});
+
+function renderGallery() {
+  galleryPreview.innerHTML = '';
+  currentImages.forEach((durl, idx) => {
+    const img = document.createElement('img');
+    img.src = durl;
+    img.className = 'thumb';
+    img.title = 'Click to remove';
+    img.addEventListener('click', () => {
+      if (!confirm('Remove this image?')) return;
+      currentImages.splice(idx,1);
+      renderGallery();
+    });
+    galleryPreview.appendChild(img);
+  });
+}
+
+function saveEntry() {
+  const title = titleInput.value.trim();
+  const text = textInput.value.trim();
+  const mood = moodSelect.value;
+  const tags = (tagsInput.value || '').split(',').map(s=>s.trim()).filter(Boolean);
+  const fonts = { font: fontSelect.value, size: fontSize.value, color: textColor.value };
+
+  if (!title && !text && currentImages.length===0 && currentDrawings.length===0) {
+    alert('Entry is empty. Add text, image or drawing before saving.');
+    return;
+  }
+
+  let entries = readEntries();
+  const now = new Date().toISOString();
+  if (currentEditingId) {
+    // update
+    const idx = entries.findIndex(e => e.id === currentEditingId);
+    if (idx >= 0) {
+      entries[idx].title = title;
+      entries[idx].text = text;
+      entries[idx].mood = mood;
+      entries[idx].tags = tags;
+      entries[idx].fonts = fonts;
+      entries[idx].images = currentImages;
+      entries[idx].drawings = currentDrawings;
+      entries[idx].updatedAt = now;
+    }
+  } else {
+    const entry = {
+      id: uid('entry'),
+      title, text, mood, tags, fonts,
+      images: currentImages.slice(),
+      drawings: currentDrawings.slice(),
+      createdAt: now, updatedAt: now
+    };
+    entries.push(entry);
+    currentEditingId = entry.id;
+  }
+  saveEntries(entries);
+  loadEntriesList();
+  alert('Saved');
+}
+
+function clearEditor() {
+  titleInput.value = '';
+  textInput.value = '';
+  fontSelect.value = 'Segoe UI';
+  fontSize.value = '16';
+  textColor.value = '#000000';
+  moodSelect.value = '😊';
+  tagsInput.value = '';
+  currentImages = [];
+  currentDrawings = [];
+  renderGallery();
+  clearCanvas();
+}
+
+/* Open an entry for editing/viewing */
+function openEntry(id) {
+  const entries = readEntries();
+  const entry = entries.find(e => e.id === id);
+  if (!entry) { alert('Entry not found'); return; }
+  currentEditingId = entry.id;
+  titleInput.value = entry.title || '';
+  textInput.value = entry.text || '';
+  fontSelect.value = (entry.fonts && entry.fonts.font) || 'Segoe UI';
+  fontSize.value = (entry.fonts && entry.fonts.size) || '16';
+  textColor.value = (entry.fonts && entry.fonts.color) || '#000000';
+  moodSelect.value = entry.mood || '😊';
+  tagsInput.value = (entry.tags || []).join(', ');
+  currentImages = entry.images ? entry.images.slice() : [];
+  currentDrawings = entry.drawings ? entry.drawings.slice() : [];
+  renderGallery();
+  // load first drawing into canvas preview? We'll just show drawings as images appended
+  updatePageTitle(entry.title || 'View Entry');
+  showEditorPanel();
+}
+
+/* update page title / date */
+function updatePageTitle(t) {
+  document.getElementById('pageTitle').textContent = t || 'New Entry';
+  document.getElementById('entryDatePreview').textContent = currentEditingId ? ('Edited: ' + (new Date().toLocaleString())) : '';
+}
+
+/* --------- Canvas drawing --------- */
+const drawCanvas = document.getElementById('drawCanvas');
+let ctx, drawing=false, lastPos={x:0,y:0};
+function initCanvas() {
+  resizeCanvas();
+  ctx = drawCanvas.getContext('2d');
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#000000';
+
+  ['mousedown','touchstart'].forEach(ev => drawCanvas.addEventListener(ev, startDraw));
+  ['mouseup','touchend','mouseleave'].forEach(ev => drawCanvas.addEventListener(ev, endDraw));
+  ['mousemove','touchmove'].forEach(ev => drawCanvas.addEventListener(ev, draw));
+  window.addEventListener('resize', resizeCanvas);
+
+  document.getElementById('clearCanvas').addEventListener('click', clearCanvas);
+  document.getElementById('saveCanvas').addEventListener('click', saveCanvas);
+}
+function resizeCanvas() {
+  const rect = drawCanvas.getBoundingClientRect();
+  const w = rect.width;
+  const h = Math.max(180, Math.floor(rect.height));
+  drawCanvas.width = Math.floor(w * devicePixelRatio);
+  drawCanvas.height = Math.floor(h * devicePixelRatio);
+  drawCanvas.style.width = w + 'px';
+  drawCanvas.style.height = h + 'px';
+  if (ctx) {
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#000000';
+  }
+}
+function getRelative(e) {
+  if (e.touches && e.touches.length) {
+    e = e.touches[0];
+  }
+  const rect = drawCanvas.getBoundingClientRect();
+  return { x: (e.clientX - rect.left), y: (e.clientY - rect.top) };
+}
+function startDraw(e) {
+  drawing = true;
+  lastPos = getRelative(e);
+  e.preventDefault();
+}
+function endDraw(e) {
+  drawing = false;
+  ctx.beginPath();
+  e.preventDefault();
+}
+function draw(e) {
+  if (!drawing) return;
+  const pos = getRelative(e);
+  ctx.beginPath();
+  ctx.moveTo(lastPos.x, lastPos.y);
+  ctx.lineTo(pos.x, pos.y);
+  ctx.stroke();
+  lastPos = pos;
+  e.preventDefault();
+}
+function clearCanvas() {
+  const r = drawCanvas.getContext('2d');
+  r.clearRect(0,0,drawCanvas.width, drawCanvas.height);
+}
+function saveCanvas() {
+  // convert canvas to dataURL and store
+  const dataUrl = drawCanvas.toDataURL('image/png', 0.9);
+  currentDrawings.push(dataUrl);
+  alert('Drawing saved to this entry');
+}
+
+/* --------- Calendar & Mood tracker --------- */
+document.getElementById('btnCalendar').addEventListener('click', openCalendar);
+document.getElementById('btnMoodStats').addEventListener('click', openMoodStats);
+
+function openCalendar() {
+  const aux = document.getElementById('auxPanel');
+  aux.innerHTML = '';
+  const card = document.createElement('div'); card.className = 'card';
+  card.innerHTML = '<h3>Calendar</h3><div id="calendarGrid" class="calendar"></div>';
+  aux.appendChild(card);
+  renderCalendar();
+}
+
+function renderCalendar(year=null, month=null) {
+  const now = new Date();
+  year = year === null ? now.getFullYear() : year;
+  month = month === null ? now.getMonth() : month;
+  const first = new Date(year, month, 1);
+  const startDay = first.getDay(); // 0-6 Sun-Sat
+  const days = new Date(year, month+1, 0).getDate();
+  const grid = document.getElementById('calendarGrid');
+  grid.innerHTML = '';
+  // 7x6 grid
+  for (let i=0;i<startDay;i++) {
+    const empty = document.createElement('div'); empty.className='cal-day'; empty.textContent='';
+    grid.appendChild(empty);
+  }
+  const entries = readEntries();
+  for (let d=1; d<=days; d++) {
+    const dt = new Date(year, month, d);
+    const dayId = dt.toISOString().slice(0,10);
+    const dayEntries = entries.filter(e => e.createdAt && e.createdAt.slice(0,10) === dayId);
+    const div = document.createElement('div'); div.className='cal-day';
+    if (dayEntries.length) div.classList.add('has-entry');
+    div.textContent = d;
+    div.addEventListener('click', () => {
+      // show list of entries for that day
+      showEntriesForDay(dayId);
+    });
+    grid.appendChild(div);
+  }
+}
+
+function showEntriesForDay(dayId) {
+  const aux = document.getElementById('auxPanel');
+  aux.innerHTML = '';
+  const card = document.createElement('div'); card.className='card';
+  card.innerHTML = `<h3>Entries for ${dayId}</h3><div id="dayEntriesList"></div>`;
+  aux.appendChild(card);
+  const list = document.getElementById('dayEntriesList');
+  const entries = readEntries().filter(e => e.createdAt && e.createdAt.slice(0,10) === dayId);
+  if (!entries.length) { list.innerHTML = '<div class="small-note">No entries</div>'; return; }
+  entries.forEach(e => {
+    const el = document.createElement('div'); el.className='entry-card';
+    el.innerHTML = `<div style="flex:1"><div class="entry-title">${e.title || e.text.slice(0,40)}</div><div class="entry-meta">${new Date(e.createdAt).toLocaleString()}</div></div>`;
+    el.addEventListener('click', ()=> openEntry(e.id));
+    list.appendChild(el);
+  });
+}
+
+/* Mood stats simple chart (text-based) */
+function openMoodStats() {
+  const aux = document.getElementById('auxPanel');
+  aux.innerHTML = '';
+  const card = document.createElement('div'); card.className='card';
+  card.innerHTML = '<h3>Mood Tracker (counts)</h3><div id="moodStats"></div>';
+  aux.appendChild(card);
+  const statsEl = document.getElementById('moodStats');
+  const entries = readEntries();
+  const counts = {};
+  entries.forEach(e => { counts[e.mood] = (counts[e.mood]||0) + 1; });
+  statsEl.innerHTML = Object.keys(counts).map(k => `<div style="display:flex;justify-content:space-between;padding:6px 0;"><div>${k}</div><div>${counts[k]}</div></div>`).join('') || '<div class="small-note">No data</div>';
+}
+
+/* --------- Export / Import / Backup --------- */
+document.getElementById('btnExport').addEventListener('click', () => {
+  const entries = readEntries();
+  const data = { exportedAt: new Date().toISOString(), entries };
+  const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'diary-backup-' + (new Date().toISOString().slice(0,10)) + '.json'; a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('btnImport').addEventListener('click', () => {
+  const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json';
+  inp.onchange = async (ev) => {
+    const f = ev.target.files[0];
+    if (!f) return;
+    const txt = await f.text();
+    try {
+      const data = JSON.parse(txt);
+      if (Array.isArray(data.entries)) {
+        // merge entries - keep ids unique
+        let existing = readEntries();
+        const map = new Map(existing.map(e => [e.id, e]));
+        data.entries.forEach(e => {
+          if (!map.has(e.id)) map.set(e.id, e);
+        });
+        const merged = Array.from(map.values());
+        saveEntries(merged);
+        loadEntriesList();
+        alert('Imported ' + data.entries.length + ' entries.');
+      } else alert('Invalid file format');
+    } catch (err) { alert('Failed to import: ' + err.message); }
+  };
+  inp.click();
+});
+
+/* --------- Google Drive sync (simple upload/download) ---------
+   NOTE: To enable Drive sync you must:
+     1) Create OAuth credentials at Google Cloud Console -> OAuth Client ID (type: Web app)
+     2) Add your site origin and redirect URI to the auth credentials.
+     3) Paste the CLIENT_ID into GOOGLE_CLIENT_ID constant at top.
+   This implementation is a simplified flow using the OAuth 2.0 implicit flow (popup).
+   It's a minimal helper: it will upload a backup JSON file to the user's Drive root.
+-----------------------------------*/
+async function driveAuthPopup() {
+  if (!GOOGLE_CLIENT_ID) throw new Error('No Google Client ID configured');
+  const scope = encodeURIComponent('https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata');
+  const redirect = 'urn:ietf:wg:oauth:2.0:oob';
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&response_type=token&scope=${scope}&redirect_uri=${redirect}`;
+  // open popup
+  const w = 600, h = 600, left = (screen.width - w)/2, top = (screen.height - h)/2;
+  const popup = window.open(authUrl, 'gdrive_auth', `width=${w},height=${h},left=${left},top=${top}`);
+  return new Promise((resolve, reject) => {
+    if (!popup) return reject(new Error('Popup blocked'));
+    const timer = setInterval(() => {
+      try {
+        if (!popup || popup.closed) { clearInterval(timer); reject(new Error('Popup closed')); }
+        // In this implicit flow with redirect urn:..., Google shows token in the page; we can't easily read it across origins.
+        // This requires a server side or a redirect URI that you control to capture access_token. For simplicity, we show instructions to user.
+      } catch (e) {}
+    }, 500);
+    // fallback: show message
+    setTimeout(()=> {
+      popup.close();
+      clearInterval(timer);
+      reject(new Error('OAuth implicit flow cannot be completed from static page. See code comments for setup.'))
+    }, 9000);
+  });
+}
+
+async function driveSyncUploadAll() {
+  // For static demo we fallback to prompting user to export and upload manually
+  alert('Drive sync requires configuration (Google OAuth). For now, export backup and upload to Drive manually. If you want, I can add a full Drive flow but it requires a CLIENT_ID and redirect setup.');
+}
+
+/* --------- Settings and theme --------- */
+document.getElementById('btnSettings').addEventListener('click', () => {
+  document.getElementById('settingsCard').style.display = document.getElementById('settingsCard').style.display === 'block' ? 'none' : 'block';
+});
+document.getElementById('btnSettings').addEventListener('click', () => { /* duplicate for left */ });
+
+/* Hook up settings toggles: (font, bg color etc) */
+const uiFont = document.getElementById('uiFont');
+const uiFontSize = document.getElementById('uiFontSize');
+const bgColorPick = document.getElementById('bgColorPick');
+const accentColorPick = document.getElementById('accentColorPick');
+if (uiFont) {
+  uiFont.value = localStorage.getItem('uiFont') || '';
+  uiFontSize.value = localStorage.getItem('uiFontSize') || '16';
+  bgColorPick.value = localStorage.getItem('bgColor') || '#0b1320';
+  accentColorPick.value = localStorage.getItem('accent') || '#00e5ff';
+}
+
+/* Save settings button (if present) */
+document.querySelectorAll('#saveSettings, #saveSettingsBtn').forEach(btn => {
+  btn && btn.addEventListener('click', () => {
+    const f = document.getElementById('uiFont')?.value;
+    const s = document.getElementById('uiFontSize')?.value;
+    const bg = document.getElementById('bgColorPick')?.value;
+    const accent = document.getElementById('accentColorPick')?.value;
+    SETTINGS.theme = document.body.classList.contains('light') ? 'light' : 'dark';
+    SETTINGS.uiFont = f; SETTINGS.uiFontSize = s;
+    SETTINGS.bg = bg; SETTINGS.accent = accent;
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(SETTINGS));
+    alert('Settings saved. Reload to fully apply some UI changes.');
+  });
+}
+
+/* --------- Utilities --------- */
+function escapeHtml(s) {
+  if (!s) return '';
+  return s.replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+
+function showEditorPanel() {
+  // scroll into view, focus
+  document.getElementById('editorPanel').scrollIntoView({behavior:'smooth'});
+}
+
+/* Apply theme from settings */
+function applyTheme() {
+  if (SETTINGS.theme === 'light') document.body.classList.add('light'); else document.body.classList.remove('light');
+}
+
+/* copy/paste, other helpful functions can be added here */
+
+/* -------------- final notes -------------- */
+/*
+This is a complete advanced diary PWA single-file starter.
+- Put icons into /assets/icons/diary-192.png and diary-512.png
+- To enable Google Drive sync, create OAuth credentials and set GOOGLE_CLIENT_ID at top and implement proper redirect flow.
+- Storage uses localStorage for simplicity; for larger or many images use IndexedDB for reliability.
+- This file enforces install-only by default (can be disabled in Settings).
+- Password is stored as SHA-256 hash in localStorage (more secure than plain text). For stronger security consider encrypting entry content using the password-derived key and using WebCrypto.
+*/
+
+</script>
+
+<!-- Embedded service worker registration (simple cache) -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    const sw = `
+      const CACHE = 'diary-pwa-v1';
+      const assets = ['/', '/index.html', '${ICON_192}', '${ICON_512}'];
+      self.addEventListener('install', e => {
+        e.waitUntil(caches.open(CACHE).then(c => c.addAll(assets)).catch(()=>{}));
+      });
+      self.addEventListener('fetch', e => {
+        e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)).catch(()=>caches.match('/index.html')));
+      });
+    `;
+    const blob = new Blob([sw], {type:'application/javascript'});
+    navigator.serviceWorker.register(URL.createObjectURL(blob)).then(()=>console.log('SW registered for Diary PWA'));
+  });
+}
+</script>
+
+</body>
+</html>
